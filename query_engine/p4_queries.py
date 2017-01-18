@@ -639,8 +639,6 @@ class Filter(object):
         self.filter_values = ()
         self.src = 0
 
-
-
         if 'filter_values' in map_dict:
             self.filter_values = map_dict['filter_values']
 
@@ -749,6 +747,97 @@ class Filter(object):
         self.update_filter_tables()
         self.update_p4_encap()
 
+
+class TruncatePayload(object):
+    def __init__(self, qid, id, mirror_id, out_headers):
+        self.name = "TruncatePayload"
+        self.qid = qid
+        self.id = id
+        self.mirror_id = mirror_id
+        self.operator_name = 'truncate_payload'+str(self.qid)+'_'+str(self.id)
+        self.p4_state = ''
+        self.p4_utils = ''
+        self.p4_control = ''
+        self.p4_egress = ''
+        self.p4_invariants = ''
+        self.p4_init_commands = []
+        self.filter_rules = ''
+        self.expr = ''
+        self.header_length = 1500
+        self.out_headers = out_headers
+
+    def __repr__(self):
+        return '.TruncatePayload()'
+
+    def update_p4_invariants(self):
+        out = '#include "includes/headers.p4"\n'
+        out += '#include "includes/parser.p4"\n\n'
+        out += 'parser start {\n\treturn select(current(0, 64)) {\n\t\t0 : parse_out_header;\n\t\tdefault: parse_ethernet;\n\t}\n}\n'
+        out += 'action _drop() {\n\tdrop();\n}\n\n'
+        out += 'action _nop() {\n\tno_op();\n}\n\n'
+
+        self.p4_invariants += out
+        return out
+
+    def add_out_header(self):
+        out = 'header_type out_header_'+str(self.qid)+'_t {\n'
+        out += '\tfields {\n'
+
+        for fld in self.out_headers:
+            if '/' in fld:
+                fld = fld.split('/')[0]
+            out += '\t\t'+fld+' : '+str(header_size[fld])+';\n'
+        out = out [:-1]
+        out += '}\n}\n\n'
+        out += 'header out_header_'+str(self.qid)+'_t out_header_'+str(self.qid)+';\n\n'
+        return out
+
+    def add_copy_fields(self):
+        out = 'field_list copy_to_cpu_fields_'+str(self.qid)
+        out += '{\n'
+        out += '\tstandard_metadata;\n'
+        out += '\tmeta_map_init_'+str(self.qid)+';\n'
+        out += '\tmeta_fm;\n'
+        out += '}\n\n'
+
+        out += 'action do_copy_to_cpu_'+str(self.qid)+'() {\n\tclone_ingress_pkt_to_egress('+str(self.mirror_id)+', copy_to_cpu_fields_'+str(self.qid)+');\n}\n\n'
+        out += 'table copy_to_cpu_'+str(self.qid)+' {\n\tactions {do_copy_to_cpu_'+str(self.qid)+';}\n\tsize : 1;\n}\n\n'
+
+        return out
+
+    def add_encap_table(self):
+        out = 'table encap_'+str(self.qid)+' {\n\tactions { do_encap_'+str(self.qid)+'; }\n\tsize : 1;\n}\n\n'
+        return out
+
+    def add_encap_action(self):
+        out = 'action do_encap_'+str(self.qid)
+        out += '() {\n\tadd_header(out_header_'+str(self.qid)+');\n\t'
+        for fld in self.out_headers:
+            if '/' in fld:
+                fld = fld.split('/')[0]
+            #if fld in header_map:
+            meta_fld = 'meta_map_init_'+str(self.qid)+'.'+fld
+            out += 'modify_field(out_header_'+str(self.qid)+'.'+fld+', '
+            out += meta_fld+ ');\n\t'
+
+        # get the size of the header in bytes such that we don't truncate the additional header
+        header_length = sum([header_size[fld] for fld in self.out_headers])/8
+        out += 'truncate(' + str(header_length) + ');\n'
+
+        out += '}\n\n'
+        return out
+
+    def update_p4_encap(self):
+        self.p4_egress += self.add_out_header()
+        self.p4_egress += self.add_copy_fields()
+        self.p4_egress += self.add_encap_table()
+        self.p4_egress += self.add_encap_action()
+
+    def compile_dp(self):
+        self.update_p4_invariants()
+        self.update_p4_encap()
+
+
 class QueryPipeline(object):
     '''Multiple packet streams can exist for a switch'''
     def __init__(self, id):
@@ -769,6 +858,7 @@ class QueryPipeline(object):
         self.expr = 'In'
         self.refinement_filter_id = 0
         self.parse_payload = False
+        self.keys = None
 
     def __repr__(self):
         expr = 'In\n'
@@ -781,6 +871,7 @@ class QueryPipeline(object):
         new_args = (id, self.qid, self.mirror_id, TABLE_WIDTH, TABLE_SIZE, THRESHOLD)+args
         map_dict = dict(*args, **kwargs)
         keys = map_dict['keys']
+        self.keys = keys
         values = ()
         func = ''
         if 'values' in map_dict:
@@ -841,7 +932,17 @@ class QueryPipeline(object):
         self.expr += '\n\t.MapInit('+str(self.keys)+')'
         return self
 
+    def truncate_payload(self, *args, **kwargs):
+        operator_id = len(self.operators)
+        self.operators.append(TruncatePayload(self.qid, operator_id, self.mirror_id, *args, **kwargs))
+        return self
+
     def update_p4_src(self):
+        if not self.parse_payload:
+            operator_id = len(self.operators)
+            out_headers = self.operators[-1].out_headers
+            self.operators.append(TruncatePayload(self.qid, operator_id, self.mirror_id, out_headers))
+
         for operator in self.operators:
             operator.compile_dp()
 
