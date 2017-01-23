@@ -91,7 +91,7 @@ class Emitter(object):
             output_tuple = ['k']+[str(qid)]+output_tuple
             send_tuple = ",".join([str(x) for x in output_tuple])
             if is_related:
-                #print "Tuple:", send_tuple, "xx"
+                print "Tuple:", send_tuple, "xx"
                 self.send_data(send_tuple + "\n")
             else:
                 print "Sniffed unrelated packet."

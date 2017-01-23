@@ -13,9 +13,6 @@ from multiprocessing.connection import Client, Listener
 spark_stream_address = 'localhost'
 spark_stream_port = 8989
 
-batch_interval = 1
-window_length = 10
-sliding_interval = 10
 
 featuresPath = ''
 redKeysPath = ''

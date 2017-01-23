@@ -28,7 +28,7 @@ def send_packet(pkt_tuple):
 
 
 def create_attack_traffic():
-    number_of_packets = 100
+    number_of_packets = 1000
     dIP = '99.7.186.25'
     sIPs = []
     attack_packets = []
@@ -96,32 +96,36 @@ def send_packets(use_composed = True):
     ordered_ts.sort()
     print "Total flow entries:", len(ordered_ts)
 
+    packet_count = {}
     composed_packets = {}
     attack_packets = {}
     if use_composed:
         with open("/home/arp/SONATA-DEV/data/composed_packets.pickle",'r') as f:
             composed_packets = pickle.load(f)
             #print composed_packets
-
     else:
         start = time.time()
-	ctr = 1
+        ctr = 1
         for ts in ordered_ts:
             composed_packets[ts] = []
-	    attack_packets[ts] = []
-	
+            attack_packets[ts] = []
+
             pkt_tuples = ipfix_data[ts][:1000]
-	    if ctr >= 10 and ctr <= 20:
-		attack_packets[ts].extend(create_attack_traffic())
+            packet_count[ts] = len(ipfix_data[ts])
+            if ctr >= 10 and ctr <= 30:
+                attack_packets[ts].extend(create_attack_traffic())
             for pkt_tuple in pkt_tuples:
                 composed_packets[ts].append(compose_packet(pkt_tuple[2:]))
-	    ctr += 1			
+            ctr += 1
 
         with open("composed_packets.pickle",'w') as f:
             pickle.dump(composed_packets, f)
 
         end = time.time()
         print "Time to compose: ", str(end-start)
+
+
+    print packet_count
 
     ctr = 1
     counter = {}
@@ -131,24 +135,20 @@ def send_packets(use_composed = True):
         print "Number of packets in:", ts, " are ", len(composed_packets[ts])
         #outgoing_packets = composed_packets[ts]
         outgoing_packets = composed_packets[ts]
-        if ctr >= 10 and ctr <=20:
+        if ctr >= 10 and ctr <= 30:
             counter[ts] += 1000
             print "Sending Attack traffic..."
             #attack_packets = create_attack_traffic()
             sendp(attack_packets[ts], iface = "out-veth-1", verbose=0)
-            #outgoing_packets.extend(attack_packets)
-	    #sendp(outgoing_packets, iface = "out-veth-1", verbose=0)
+            sendp(outgoing_packets[:100], iface = "out-veth-1", verbose=0)
         else:
-	    x = 1
-            #for packet in outgoing_packets:
-            #sendp(outgoing_packets, iface = "out-veth-1", verbose=0)
+            sendp(outgoing_packets, iface = "out-veth-1", verbose=0)
         counter[ts] += 1000
         total = time.time()-start
-        sleep_time = 1-total
+        sleep_time = 0.5-total
         print "Finished Sending...", str(total), "sleeping for: ", sleep_time
         if sleep_time > 0:
             time.sleep(sleep_time)
-
         ctr += 1
 
 send_packets(False)
