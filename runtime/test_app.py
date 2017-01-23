@@ -46,7 +46,7 @@ if __name__ == '__main__':
           .distinct(keys=('dIP', 'sIP'))
           .map(keys=('dIP',), map_values = ('count',), func=('eq',1,))
           .reduce(keys=('dIP',), func=('sum',))
-          .filter(filter_vals=('count',), func=('geq', '1'))
+          .filter(filter_vals=('count',), func=('geq', '90'))
           .map(keys=('dIP',))
           )
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     q3 = (q2.join(new_qid=3, query=q1)
           .map(keys=('dIP', 'payload'), map_values=('count',), func=('eq', 1))
           .reduce(keys=('dIP','payload'),func=('sum',))
-          .filter(filter_vals=('count',), func = ('geq', 1))
+          .filter(filter_vals=('count',), func = ('geq', 2))
           .map(keys=('dIP',))
           .distinct(keys=('dIP',))
           )

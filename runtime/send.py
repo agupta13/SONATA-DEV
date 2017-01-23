@@ -43,8 +43,10 @@ def create_attack_traffic():
     return attack_packets
 
 def compose_packet(pkt_tuple):
+    random_number = random.randint(1, 10000)
+    payload_string = "SONATA"+str(random_number)
     (sIP, sPort, dIP, dPort, nBytes, proto, sMac, dMac) = pkt_tuple
-    p = Ether() / IP(dst=dIP, src=sIP) / TCP(dport=int(dPort), sport=int(sPort)) / "SONATA"
+    p = Ether() / IP(dst=dIP, src=sIP) / TCP(dport=int(dPort), sport=int(sPort)) / payload_string
     return p
 
 
@@ -116,12 +118,15 @@ def send_packets(use_composed = True):
         print "Time to compose: ", str(end-start)
 
     ctr = 1
+    counter = {}
     for ts in ordered_ts:
+        counter[ts] = 0
         start = time.time()
         print "Number of packets in:", ts, " are ", len(composed_packets[ts])
         #outgoing_packets = composed_packets[ts]
         outgoing_packets = composed_packets[ts]
-        if ctr >= 10 and ctr <=15:
+        if ctr >= 10 and ctr <=20:
+            counter[ts] += 100
             print "Sending Attack traffic..."
             attack_packets = create_attack_traffic()
             sendp(attack_packets, iface = "out-veth-1", verbose=0)
@@ -129,6 +134,7 @@ def send_packets(use_composed = True):
 
         #for packet in outgoing_packets:
         sendp(outgoing_packets, iface = "out-veth-1", verbose=0)
+        counter[ts] += 1000
         total = time.time()-start
         sleep_time = 1-total
         print "Finished Sending...", str(total), "sleeping for: ", sleep_time
