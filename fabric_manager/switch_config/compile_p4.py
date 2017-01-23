@@ -1,6 +1,6 @@
 from utils import *
 
-P4C_BM_SCRIPT = "/home/vagrant/p4c-bmv2/p4c_bm/__main__.py"
+P4C_BM_SCRIPT = BASE_PATH + "p4c-bmv2/p4c_bm/__main__.py"
 
 
 def compile_p4_2_json():

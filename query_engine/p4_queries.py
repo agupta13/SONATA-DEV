@@ -3,7 +3,7 @@
 #  Arpit Gupta (arpitg@cs.princeton.edu)
 
 TABLE_WIDTH = 32
-TABLE_SIZE = 4096
+TABLE_SIZE = 16000
 DISTINCT = 0
 THRESHOLD = 2
 

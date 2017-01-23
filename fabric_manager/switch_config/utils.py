@@ -1,14 +1,14 @@
 from subprocess import check_output, CalledProcessError
 from tempfile import TemporaryFile
-
+BASE_PATH = "/home/arp/"
 ## Code Compilation
-COMPILED_SRCS = "/home/vagrant/dev/fabric_manager/switch_config/compiled_srcs/"
+COMPILED_SRCS = BASE_PATH + "SONATA-DEV/fabric_manager/switch_config/compiled_srcs/"
 JSON_P4_COMPILED = COMPILED_SRCS + "compiled.json"
 P4_COMPILED = COMPILED_SRCS + "compiled.p4"
 import subprocess
 
 ## Initialization of Switch
-BMV2_PATH = "/home/vagrant/bmv2"
+BMV2_PATH = BASE_PATH + "bmv2"
 BMV2_SWITCH_BASE = BMV2_PATH + "/targets/simple_switch"
 
 SWITCH_PATH = BMV2_SWITCH_BASE + "/simple_switch"
