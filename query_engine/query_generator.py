@@ -9,7 +9,7 @@ import copy
 from query_engine.sonata_operators import *
 from query_engine.sonata_queries import *
 from query_engine.utils import *
-from runtime.runtime import *
+#from runtime.runtime import *
 import os
 
 batch_interval = 1

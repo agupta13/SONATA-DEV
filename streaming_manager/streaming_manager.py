@@ -16,7 +16,6 @@ spark_stream_port = 8989
 batch_interval = 1
 window_length = 10
 sliding_interval = 10
-T = 1000*window_length
 
 featuresPath = ''
 redKeysPath = ''
