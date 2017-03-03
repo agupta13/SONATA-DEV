@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-from p4_target import P4Target
+from p4_old import P4Target
 
 
 class DataplaneDriver(object):
@@ -9,13 +9,17 @@ class DataplaneDriver(object):
         pass
 
     def is_supportable(self, application, target):
-        return False
+        return True
 
     def get_cost(self, target):
         return 999
 
-    def execute(self, application, target):
-        pass
+    def execute(self, application, target_type):
+        if target_type == 'p4':
+            target = P4Target()
+
+            target.compile_app(application)
+
 
 
 def main():
