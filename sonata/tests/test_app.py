@@ -13,7 +13,7 @@ batch_interval = 1
 window_length = 1
 sliding_interval = 1
 
-result_folder = '/home/vagrant/dev/results/result1/'
+result_folder = '/home/sonata/SONATA-DEV/sonata/tests/macro_bench/results/'
 emitter_log_file = result_folder + "emitter.log"
 fm_log_file = result_folder + "dataplane_driver.log"
 rt_log_file = result_folder + "runtime.log"

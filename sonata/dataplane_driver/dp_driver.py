@@ -91,6 +91,8 @@ class DataplaneDriver(object):
             em_config = config['em_conf']
             switch_config = config['switch_conf']
             target = P4Target(em_config, switch_config)
+	    print "&&&&&&&&&&&&&&&&&&&&&&&&&&"
+            print switch_config
         elif target_type == 'openflow':
             target = OFTarget()
 

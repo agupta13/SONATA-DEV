@@ -4,7 +4,7 @@ import sys
 from mininet.link import Intf
 from mininet.net import Mininet
 from mininet.topo import Topo
-sys.path.append("/home/vagrant/bmv2/mininet")
+sys.path.append("/home/sonata/bmv2/mininet")
 
 from p4_mininet import P4Switch, P4Host
 from time import sleep

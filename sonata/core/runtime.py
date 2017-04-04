@@ -232,11 +232,11 @@ class Runtime(object):
         config = {
             'em_conf': self.conf['emitter_conf'],
             'switch_conf': {
-                'compiled_srcs': '/home/vagrant/dev/sonata/dataplane_driver/p4/compiled_srcs/',
+                'compiled_srcs': '/home/sonata/SONATA-DEV/sonata/dataplane_driver/p4/compiled_srcs/',
                 'json_p4_compiled': 'compiled.json',
                 'p4_compiled': 'compiled.p4',
-                'p4c_bm_script': '/home/vagrant/p4c-bmv2/p4c_bm/__main__.py',
-                'bmv2_path': '/home/vagrant/bmv2',
+                'p4c_bm_script': '/home/sonata/SONATA-DEV/p4c-bmv2/p4c_bm/__main__.py',
+                'bmv2_path': '/home/sonata/SONATA-DEV/bmv2',
                 'bmv2_switch_base': '/targets/simple_switch',
                 'switch_path': '/simple_switch',
                 'cli_path': '/sswitch_CLI',

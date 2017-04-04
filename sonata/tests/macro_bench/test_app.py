@@ -13,7 +13,7 @@ batch_interval = 0.5
 window_length = 1
 sliding_interval = 1
 
-RESULTS_FOLDER = '/home/vagrant/dev/sonata/tests/macro_bench/results/'
+RESULTS_FOLDER = '/home/sonata/SONATA-DEV/sonata/tests/macro_bench/results/'
 
 featuresPath = ''
 redKeysPath = ''
