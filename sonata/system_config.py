@@ -16,14 +16,14 @@ DELTA = 0.01
 #BASIC_HEADERS = ["ts", "sIP", "sPort", "dIP", "dPort", "nBytes", "proto", "sMac", "dMac"]
 BASIC_HEADERS = ["sIP", "sPort", "dIP", "dPort", "nBytes", "proto", "sMac", "dMac"]
 # training data path
-TD_PATH = '/home/vagrant/dev/data/anon_all_flows_1min.csv'
-TD_PATH = '/home/vagrant/dev/data/anon_all_flows_1min.csv/part-00496'
+TD_PATH = '/home/sonata/SONATA-DEV/data/anon_all_flows_1min.csv'
+TD_PATH = '/home/sonata/SONATA-DEV/dev/data/anon_all_flows_1min.csv/part-00496'
 # refinement levels
 REFINEMENT_LEVELS = range(0, 33, 8)
 REFINEMENT_LEVELS = range(0, 33, 16)
 #REFINEMENT_LEVELS = [0, 4,32]
-QG_FNAME = '/home/vagrant/dev/training_data/dns_reflection/query_generator_object_reflection_1.pickle'
-CM_FNAME = '/home/vagrant/dev/training_data/weights_udp.pickle'
+QG_FNAME = '/home/sonata/SONATA-DEV/training_data/dns_reflection/query_generator_object_reflection_1.pickle'
+CM_FNAME = '/home/sonata/SONATA-DEV/training_data/weights_udp.pickle'
 
 TARGET_SP = 'SPARK'
 TARGET_DP = 'P4'
@@ -33,11 +33,11 @@ DP_CONFIG = {
     'em_conf': None,
     'dpd_socket':('localhost', 6666),
     'switch_conf': {
-        'compiled_srcs': '/home/vagrant/sonata/dataplane_driver/p4/compiled_srcs/',
+        'compiled_srcs': '/home/sonata/SONATA-DEV/sonata/dataplane_driver/p4/compiled_srcs/',
         'json_p4_compiled': 'compiled.json',
         'p4_compiled': 'compiled.p4',
-        'p4c_bm_script': '/home/vagrant/p4c-bmv2/p4c_bm/__main__.py',
-        'bmv2_path': '/home/vagrant/bmv2',
+        'p4c_bm_script': '/home/sonata/p4c-bmv2/p4c_bm/__main__.py',
+        'bmv2_path': '/home/sonata/bmv2',
         'bmv2_switch_base': '/targets/simple_switch',
         'switch_path': '/simple_switch',
         'cli_path': '/sswitch_CLI',
