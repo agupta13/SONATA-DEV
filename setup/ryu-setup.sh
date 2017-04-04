@@ -7,13 +7,13 @@ cd ~
 #  Dependencies for ryu
 sudo apt-get install -y python-routes python-dev
 
-sudo pip install -r ~/dev/setup/pip-ryu-requires
+sudo pip install -r ~/SONATA-DEV/setup/pip-ryu-requires
 
 #  Ryu install
 cd ~
 #git clone -b $RYU_VERSION git://github.com/osrg/ryu.git
 git clone https://github.com/osrg/ryu.git
-sudo cp dev/setup/ryu-flags.py ryu/ryu/flags.py
+sudo cp SONATA_DEV/setup/ryu-flags.py ryu/ryu/flags.py
 cd ryu
 
 # Below should be temporary until ryu's pip-requires file is fixed

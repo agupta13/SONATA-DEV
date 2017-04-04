@@ -7,6 +7,9 @@ while [ "$1" != "" ]; do
     shift
 done
 
+DIR="/home/sonata"
+DEVDIR="/home/sonata/SONATA-DEV"
+
 # install packages
 sudo apt-get -f -y install
 
@@ -19,16 +22,14 @@ python-sphinx mongodb dos2unix wireshark
 
 sudo pip install -U pip
 
-sudo pip install -r ~/dev/setup/pip-basic-requires
+sudo pip install -r $DEVDIR/setup/pip-basic-requires
 
 sudo apt-get install -y ssh git emacs sshfs graphviz feh
 sudo apt-get install -y libstring-crc32-perl
 
 echo 'Defaults    env_keep += "PYTHONPATH"' | sudo tee --append /etc/sudoers
-echo 'PATH=$PATH:~/iSDX/bin' >> ~/.profile
-echo 'export PYTHONPATH=$PYTHONPATH:/home/vagrant/dev' >> ~/.profile
-echo 'export PYTHONPATH=$PYTHONPATH:/home/vagrant/bmv2/mininet' >> ~/.profile
-echo 'export SPARK_HOME=/home/vagrant/spark/' >> ~/.profile
+echo 'export PYTHONPATH=$PYTHONPATH:/home/sonata:/home/sonata/bmv2/mininet' >> ~/.profile
+echo 'export SPARK_HOME=/home/sonata/spark/' >> ~/.profile
 
 mkdir ~/.vim
 
