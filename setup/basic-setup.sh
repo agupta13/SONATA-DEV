@@ -28,7 +28,7 @@ sudo apt-get install -y ssh git emacs sshfs graphviz feh
 sudo apt-get install -y libstring-crc32-perl
 
 echo 'Defaults    env_keep += "PYTHONPATH"' | sudo tee --append /etc/sudoers
-echo 'export PYTHONPATH=$PYTHONPATH:/home/sonata:/home/sonata/bmv2/mininet' >> ~/.profile
+echo 'export PYTHONPATH=$PYTHONPATH:/home/sonata/SONATA-DEV:/home/sonata/bmv2/mininet' >> ~/.profile
 echo 'export SPARK_HOME=/home/sonata/spark/' >> ~/.profile
 
 mkdir ~/.vim
