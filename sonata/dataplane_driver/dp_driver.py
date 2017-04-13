@@ -7,7 +7,7 @@ from multiprocessing.connection import Listener
 
 from query_cleaner import get_clean_application
 
-from openflow.openflow import OFTarget
+from openflow.ofp_target import OFPTarget
 from p4.p4_target import P4Target
 
 

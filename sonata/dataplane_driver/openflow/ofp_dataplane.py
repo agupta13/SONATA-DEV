@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
 
-class OFTarget(object):
+class OFPDataplane(object):
     def __init__(self):
         pass

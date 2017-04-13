@@ -34,7 +34,7 @@ def get_clean_application(application):
                 # drop Map operators without a supported function
                 if len(operator.func) > 0:
                     if isinstance(operator.map_keys, tuple):
-                        new_o.map_keys = tuple(operator.map_keys)
+                        new_o.map_keys = [operator.map_keys[0]]
                     else:
                         new_o.map_keys = operator.map_keys
                     new_o.keys = keys
@@ -43,12 +43,14 @@ def get_clean_application(application):
                     new_o.prev_keys = operator.prev_keys
                     new_o.prev_values = operator.prev_values
                     new_o.func = operator.func
+                    new_qo.operators.append(new_o)
             elif operator.name == 'Distinct':
                 new_o = Distinct()
                 new_o.keys = keys
                 new_o.values = operator.values
                 new_o.prev_keys = operator.prev_keys
                 new_o.prev_values = operator.prev_values
+                new_qo.operators.append(new_o)
             elif operator.name == 'Filter':
                 new_o = Filter()
                 new_o.keys = keys
@@ -62,6 +64,7 @@ def get_clean_application(application):
             elif operator.name == 'Join':
                 new_o = Join()
                 new_o.query = operator.query
+                new_qo.operators.append(new_o)
             elif operator.name == 'Reduce':
                 new_o = Reduce()
                 new_o.keys = keys
@@ -72,15 +75,15 @@ def get_clean_application(application):
                 next_operator = query.operators[index + 1]
 
                 # merge Reduce and following Filter if the filter is on count and uses geq as function
-                if next_operator.name == 'Filter' and 'count' in next_operator.filter_vals and next_operator.func[0] == 'geq':
+                if next_operator.name == 'Filter' and 'count' in next_operator.filter_values and next_operator.func[0] == 'geq':
                     skip_next_filter = True
                     filter_value = next_operator.func[1]
                     new_o.threshold = filter_value
                 else:
                     logger.error('reduce operator without a following, valid filter')
+                new_qo.operators.append(new_o)
             else:
                 print "Found a unsupported operator: %s" % (operator.name, )
-            new_qo.operators.append(new_o)
         new_app[new_qo.id] = new_qo
 
     return new_app
