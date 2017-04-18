@@ -7,7 +7,7 @@ from p4_operators import P4Distinct, P4Filter, P4Map, P4MapInit, P4Reduce
 from p4_primitives import ModifyField, AddHeader
 from sonata.dataplane_driver.utils import get_logger
 
-
+# TODO Need to distinguish TCP and UDP ports!
 HEADER_MAP = {'sIP': 'ipv4.srcAddr', 'dIP': 'ipv4.dstAddr',
               'sPort': 'tcp.srcPort', 'dPort': 'tcp.dstPort',
               'nBytes': 'ipv4.totalLen', 'proto': 'ipv4.protocol',

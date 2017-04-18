@@ -33,8 +33,6 @@ class DataplaneDriver(object):
 
         self.initialize_metrics_logger()
 
-
-
     def initialize_metrics_logger(self):
         # create a logger for the object
         self.metrics = logging.getLogger(__name__)
