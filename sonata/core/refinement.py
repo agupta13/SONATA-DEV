@@ -15,7 +15,9 @@ def get_refined_query_id(query, ref_level):
 
 def get_thresh(training_data, spark_query, spread, refinement_level, satisfied_sonata_spark_query, ref_levels):
     if refinement_level == ref_levels[-1]:
+        # print spark_query
         query_string = 'training_data.' + spark_query.compile() + '.map(lambda s: s[1]).collect()'
+        print query_string
         data = [float(x) for x in (eval(query_string))]
         thresh = 0.0
         if len(data) > 0:
@@ -58,9 +60,9 @@ def get_concise_headers(query):
     for operator in query.operators:
         if operator.name in {"Distinct", "Map", "Reduce"}:
             concise_keys = concise_keys.union(set(operator.keys))
-            if operator.name == "Map":
-                if operator.values:
-                    concise_keys = concise_keys.union(set(operator.values))
+            # if operator.name == "Map":
+            #     if operator.values:
+            #         concise_keys = concise_keys.union(set(operator.values))
         elif operator.name in ["Filter"]:
             concise_keys = concise_keys.union(set(operator.filter_keys))
 
@@ -97,14 +99,14 @@ class Refinement(object):
         self.per_query_refinement_key = {}
         tmp_refinement_key = get_refinement_keys(self.query, refinement_keys_set)
         if tmp_refinement_key:
-            print "***************** Went into refinement **********************" + str([key for key, value in self.qid_2_query.items()])
+            print "***************** Went into refinement **********************"
+            # print str([key for key, value in self.qid_2_query.items()])
 
             for key, query in self.qid_2_query.items():
-
                 tmp_refinement_key_qid = list(get_refinement_keys(query, refinement_keys_set))
                 if tmp_refinement_key_qid: self.per_query_refinement_key[key] = tmp_refinement_key_qid[0]
                 else: self.per_query_refinement_key[key] = None
-            print (self.per_query_refinement_key)
+            # print (self.per_query_refinement_key)
             self.is_refinement_enabled = True
             self.refinement_key = list(tmp_refinement_key)[0]
 
@@ -148,7 +150,7 @@ class Refinement(object):
         def add_timestamp_to_query(q):
             # This function will be useful if we need to add ts in recursion
             for operator in q.operators:
-                # operator.keys = tuple(['ts'] + list(operator.keys))
+                operator.keys = tuple(['ts'] + list(operator.keys))
                 operator.keys = tuple(list(operator.keys))
 
         for qid in self.qid_2_query:

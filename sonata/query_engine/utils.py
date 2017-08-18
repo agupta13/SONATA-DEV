@@ -114,27 +114,47 @@ def copy_operators(query, optr):
         query.distinct(keys=optr.keys,
                        values=optr.values)
 
+def flatten_streaming_field_names(fields):
+    flattened_fields = [field.replace(".", "_") for field in fields]
+
+    return flattened_fields
 
 def copy_sonata_operators_to_spark(query, optr):
     #print "Adding spark operator", optr.name
-    prev_keys = get_original_wo_mask(optr.prev_keys)
     keys = get_original_wo_mask(optr.keys)
+    # if optr.name == 'Filter':
+    #     query.filter(filter_keys=optr.filter_keys,
+    #                  filter_vals=optr.filter_vals,
+    #                  func=optr.func)
+    # elif optr.name == "Map":
+    #     query.map(keys=keys,
+    #               values=optr.values,
+    #               map_keys=optr.map_keys,
+    #               map_values=optr.map_values,
+    #               func=optr.func)
+    # elif optr.name == "Reduce":
+    #     query.reduce(keys=keys,
+    #                  func=optr.func)
+    #
+    # elif optr.name == "Distinct":
+    #     query.distinct(keys=keys)
+
     if optr.name == 'Filter':
-        query.filter(filter_keys=optr.filter_keys,
-                     filter_vals=optr.filter_vals,
+        query.filter(filter_keys=flatten_streaming_field_names(optr.filter_keys),
+                     filter_vals=flatten_streaming_field_names(optr.filter_vals),
                      func=optr.func)
     elif optr.name == "Map":
-        query.map(keys=keys,
-                  values=optr.values,
-                  map_keys=optr.map_keys,
-                  map_values=optr.map_values,
+        query.map(keys=flatten_streaming_field_names(keys),
+                  values=flatten_streaming_field_names(optr.values),
+                  map_keys=flatten_streaming_field_names(optr.map_keys),
+                  map_values=flatten_streaming_field_names(optr.map_values),
                   func=optr.func)
     elif optr.name == "Reduce":
-        query.reduce(keys=keys,
+        query.reduce(keys=flatten_streaming_field_names(keys),
                      func=optr.func)
 
     elif optr.name == "Distinct":
-        query.distinct(keys=keys)
+        query.distinct(keys=flatten_streaming_field_names(keys))
 
 def copy_spark_operators_to_spark(query, optr):
     #print "Adding spark operator", optr.name

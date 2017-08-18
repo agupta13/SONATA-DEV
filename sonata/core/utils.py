@@ -85,7 +85,7 @@ def copy_sonata_operators_to_dp_query(query, optr):
 
 
 def get_refinement_keys(query, refinement_keys_set):
-    print query
+    # print query
     red_keys = set([])
     if query.left_child is not None:
         red_keys_left = get_refinement_keys(query.left_child, refinement_keys_set)
