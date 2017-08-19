@@ -45,12 +45,12 @@ def reduce_size(fname, out_fname):
     print transformed_data.take(5)
 
     transformed_data = (transformed_data
-                        .map(lambda s: tuple([str(s[0]).split(".")[0]]+list(s[1:7]) + get_tcp_flag(s[11])))
+                        .map(lambda s: tuple([str(s[0]).split(".")[0]]+list(s[1:7]) + list(s[9:11]) + get_tcp_flag(s[11])))
                         )
     print transformed_data.take(5)
 
     """
-    ts,sIP,sPort,dIP,dPort,nBytes,proto,tcp.flags
+    ts,sIP,sPort,dIP,dPort,nBytes,proto,tcp.seq,tcp.ack,tcp.flags
     """
 
     lines = transformed_data.map(toCSVLine)

@@ -7,7 +7,7 @@
 |Completed Flows | No| 
 |Slowloris | No| 
 |Flow Distribution | No| 
-|Dup Acks| No| 
+|Dup Acks|Yes| 
 |HH | No| 
 |SYN Flood Attack | No| 
 |Superspreader | No| 
