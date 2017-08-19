@@ -119,6 +119,7 @@ class PacketStream(Query):
         return self
 
     def filter(self, append_type=0, *args, **kwargs):
+        # type: (object, object, object) -> object
         """
         :param append_type:
         :param args:
