@@ -38,6 +38,7 @@ class Hypothesis(object):
 
     def get_refinement_levels(self):
         self.R = self.refinement_object.ref_levels[1:]
+        print "Refinement Levels (R)", self.R
 
     def get_partitioning_plans(self):
         partition_object = Partition(self.query, self.target)
@@ -52,6 +53,7 @@ class Hypothesis(object):
 
     def get_iteration_levels(self):
         self.L = range(1, 1+len(self.R))
+        print "Iteration Levels (L)", self.L
 
     def get_vertices(self):
         # TODO: add support for queries with join operations

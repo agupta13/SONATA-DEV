@@ -24,11 +24,14 @@ def get_data_plane_cost(sc, operator_name, transformation_function, query_out, t
             # number of bits required to maintain the count
             bits_per_element = sc.parallelize(query_out).map(lambda s: (s[0], math.log(max(s[1]), 2)))
 
+            # in case we want to fix the size of count field to 32 only
+            # bits_per_element = sc.parallelize(query_out).map(lambda s: (s[0], 32))
+
             # total number of bits required for this data structure
             # print query_out
             tmp = sc.parallelize(query_out)
             n_bits_wo_cmsketch = bits_per_element.join(tmp).map(lambda s: (s[0], math.ceil(s[1][0] * (len(s[1][1])))))
-            # print "W/O Sketches", n_bits_wo_cmsketch.collect()
+            print "W/O Sketches", n_bits_wo_cmsketch.collect()
             n_bits_wo_cmsketch_max = max(n_bits_wo_cmsketch.map(lambda s: s[1]).collect())
 
             ## number of bits required with count min sketch

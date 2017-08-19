@@ -47,7 +47,7 @@ def generate_graph(sc, query):
     if query.qid == 1:
         training_data = (sc.textFile(flows_File)
                          .map(parse_log_line)
-                         #.map(lambda s: tuple([int(math.ceil(int(s[0]) / T))] + (list(s[1:]))))
+                         # .map(lambda s: tuple([int(math.ceil(int(s[0]) / T))] + (list(s[1:]))))
                          .map(lambda s: tuple([1] + (list(s[1:]))))
                          .filter(lambda (ts, sIP, sPort, dIP, dPort, nBytes, proto, sMac, dMac): str(proto) == '17')
                          )
@@ -66,7 +66,7 @@ def generate_graph(sc, query):
                          .filter(
             lambda (ts, sIP, sPort, dIP, dPort, nBytes, proto, sMac, dMac): str(sPort) == '22' or str(dPort) == '22')
                          .map(lambda (ts, sIP, sPort, dIP, dPort, nBytes, proto, sMac, dMac): (
-        ts, sIP, sPort, dIP, dPort, int(nBytes) / 10, proto, sMac, dMac))
+            ts, sIP, sPort, dIP, dPort, int(nBytes) / 10, proto, sMac, dMac))
                          )
     elif query.qid == 4:
         # only applied over DNS response traffic
@@ -98,9 +98,10 @@ def generate_graph(sc, query):
     print "#Timestamps: ", len(timestamps)
 
     refinement_object.update_filter(training_data)
+    # print refinement_object.refined_sonata_queries
 
 
-    # hypothesis = Hypothesis(query, sc, training_data, timestamps,refinement_object, target)
+    hypothesis = Hypothesis(query, sc, training_data, timestamps, refinement_object, target)
     # G = hypothesis.G
     # fname = 'data/hypothesis_graph_'+str(query.qid)+'_'+str(datetime.datetime.fromtimestamp(time.time()))+'.pickle'
     #
@@ -118,8 +119,8 @@ if __name__ == '__main__':
           .distinct(keys=('ipv4.dstIP', 'ipv4.srcIP'))
           .map(keys=('ipv4.dstIP',), map_values=('count',), func=('eq', 1,))
           .reduce(keys=('ipv4.dstIP',), func=('sum',))
-          .filter(filter_vals=('count',), func=('geq', 10))
-          .map(keys=('ipv4.dstIP',))
+          .filter(filter_vals=('count',), func=('geq', '99.9'))
+          # .map(keys=('ipv4.dstIP',))
           )
 
     # flow distribution

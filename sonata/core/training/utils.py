@@ -172,7 +172,8 @@ def generate_query_to_collect_transit_cost(transit_query_string, spark_query):
     return transit_query_string
 
 
-def generate_transit_query(curr_query, curr_level_out, prev_level_out_mapped, ref_level_prev):
+def generate_transit_query(curr_query, curr_level_out, prev_level_out_mapped, ref_level_prev, refinement_key):
+    refinement_key = refinement_key.replace(".", "_")
     if len(curr_query.operators) > 0:
         keys = curr_query.operators[-1].keys
         values = curr_query.operators[-1].values
@@ -183,11 +184,11 @@ def generate_transit_query(curr_query, curr_level_out, prev_level_out_mapped, re
     transit_query_string = 'self.sc.parallelize(curr_level_out)'
     if len(values) > 0:
         transit_query_string += '.map(lambda ((' + ",".join(keys) + '),(' + ",".join(values) + ')):'
-        transit_query_string += '((ts, str(IPNetwork(str(dIP)+"/"+str(' + str(ref_level_prev) + ')).network)),'
+        transit_query_string += '((ts, str(IPNetwork(str('+refinement_key+')+"/"+str(' + str(ref_level_prev) + ')).network)),'
         transit_query_string += '((' + ",".join(keys) + '),(' + ",".join(values) + '))))'
     else:
         transit_query_string += '.map(lambda (' + ",".join(keys) + '): '
-        transit_query_string += '((ts, str(IPNetwork(str(dIP)+"/"+str(' + str(
+        transit_query_string += '((ts, str(IPNetwork(str('+refinement_key+')+"/"+str(' + str(
             ref_level_prev) + ')).network)),(' + ",".join(keys) + ')))'
     transit_query_string += '.join(prev_level_out_mapped).map(lambda x: x[1][0])'
     transit_query_string = generate_query_to_collect_transit_cost(transit_query_string, curr_query)
@@ -197,6 +198,7 @@ def generate_transit_query(curr_query, curr_level_out, prev_level_out_mapped, re
 
 def generate_query_string_prev_level_out_mapped(qid, ref_level_prev, query_out_refinement_level, refined_spark_queries,
                                                 out0, reduction_key):
+    reduction_key = reduction_key.replace(".", "_")
     if ref_level_prev > 0:
         iter_qids_prev = query_out_refinement_level[qid][ref_level_prev].keys()
         iter_qids_prev.sort()
@@ -253,8 +255,8 @@ def update_counts(sc, queries, query_out, iter_qid, delta, bits_count, packet_co
         bits_count = bits_count.join(delta_bits).map(lambda s: (s[0], (s[1][0] + s[1][1])))
 
         print "After executing ", curr_operator.name, " in Data Plane"
-        # print "Bits Count Cost", bits_count.collect()[:2]
-        # print "Packet Count Cost", packet_count.collect()[:2]
+        print "Bits Count Cost", bits_count.collect()[:2]
+        print "Packet Count Cost", packet_count.collect()[:2]
 
 
         ctr += 1

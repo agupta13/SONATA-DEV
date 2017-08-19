@@ -46,13 +46,12 @@ class Counts(object):
         self.generate_refined_spark_queries()
 
         for qid in self.refined_spark_queries:
-            print "Processing Refined Queries for cost...", qid
-            self.query_cost_transit_fname = 'query_cost_transit_'+str(qid)+'.pickle'
+            print "Processing Refined Queries for cost...", qid, self.refined_spark_queries[qid]
+            self.query_cost_transit_fname = 'query_cost_transit_' + str(qid) + '.pickle'
             self.get_transit_query_output(qid)
             dump_data(self.query_out_transit, self.query_cost_transit_fname)
             with open(self.query_cost_transit_fname, 'r') as f:
                 self.query_out_transit = pickle.load(f)
-
 
     def get_transit_query_output(self, qid):
         """
@@ -84,9 +83,10 @@ class Counts(object):
                 out = query_out_refinement_level[qid][ref_level][iter_qid]
                 transit_query_string = 'self.sc.parallelize(out)'
                 transit_query_string = generate_query_to_collect_transit_cost(transit_query_string, spark_query)
+                print transit, iter_qid, transit_query_string, out[:2]
                 query_cost_transit[qid][transit][iter_qid] = eval(transit_query_string)
-                #print transit, iter_qid, query_cost_transit[qid][transit][iter_qid][:2]
-                #break
+
+                # break
 
         # Then get the cost for transit (ref_level_prev, ref_level_current)
         for ref_level_prev in ref_levels[1:]:
@@ -95,25 +95,27 @@ class Counts(object):
                     transit = (ref_level_prev, ref_level_curr)
                     query_cost_transit[qid][transit] = {}
                     prev_level_out_mapped_string, prev_level_out = generate_query_string_prev_level_out_mapped(qid,
-                                                                                           ref_level_prev,
-                                                                                           query_out_refinement_level,
-                                                                                           self.refined_spark_queries,
-                                                                                           out0,
-                                                                                           refinement_key)
+                                                                                                               ref_level_prev,
+                                                                                                               query_out_refinement_level,
+                                                                                                               self.refined_spark_queries,
+                                                                                                               out0,
+                                                                                                               refinement_key)
                     print prev_level_out_mapped_string
                     prev_level_out_mapped = eval(prev_level_out_mapped_string)
-                    #print prev_level_out_mapped.collect()[:2]
+                    print prev_level_out_mapped.collect()[:2]
                     # For each intermediate query for `ref_level_curr` in transit (ref_level_prev, ref_level_current),
                     # we filter out entries that do not satisfy the query at level `ref_level_prev`
                     for iter_qid_curr in self.refined_spark_queries[qid][ref_level_curr].keys():
-                        #if iter_qid_curr > 0:
+                        # if iter_qid_curr > 0:
                         curr_level_out = query_out_refinement_level[qid][ref_level_curr][iter_qid_curr]
                         curr_query = self.refined_spark_queries[qid][ref_level_curr][iter_qid_curr]
                         transit_query_string = generate_transit_query(curr_query, curr_level_out,
-                                                                      prev_level_out_mapped, ref_level_prev)
+                                                                      prev_level_out_mapped, ref_level_prev,
+                                                                      refinement_key)
+                        # print transit, iter_qid_curr, transit_query_string
                         query_cost_transit[qid][transit][iter_qid_curr] = eval(transit_query_string)
-                        #print transit, iter_qid_curr, query_cost_transit[qid][transit][iter_qid_curr][:2]
-
+                        print transit, iter_qid_curr, query_cost_transit[qid][transit][iter_qid_curr][:2]
+        #
         self.query_out_transit = query_cost_transit
 
     def generate_refined_spark_queries(self):
@@ -145,7 +147,8 @@ class Counts(object):
                 for ref_qid in composed_spark_queries:
                     # print ref_qid, composed_queries[ref_qid].qid
                     if len(composed_spark_queries[ref_qid].operators) > 0:
-                        tmp1, _ = generate_intermediate_spark_queries(composed_spark_queries[ref_qid], ref_level, self.target)
+                        tmp1, _ = generate_intermediate_spark_queries(composed_spark_queries[ref_qid], ref_level,
+                                                                      self.target)
                         qid = ref_qid / 10000
                         if qid not in refined_spark_queries:
                             refined_spark_queries[qid] = {}
@@ -160,6 +163,7 @@ class Counts(object):
                             refined_spark_queries[qid][ref_level][iter_qid] = tmp1[iter_qid]
 
         # print refined_spark_queries
+        print "Refined Query", refined_spark_queries
         self.refined_spark_queries = refined_spark_queries
 
     def get_query_output(self, qid, out0):
@@ -174,13 +178,14 @@ class Counts(object):
                     if len(spark_query.compile()) > 0:
                         tmp_compile = spark_query.compile()
                         query_string = 'self.training_data.' + tmp_compile + '.collect()'
-                        #print("Processing Query", qid, "refinement level", ref_level, "iteration id", iter_qid)
+                        print(
+                        "Processing Query", qid, "refinement level", ref_level, "iteration id", iter_qid, query_string)
                         out = eval(query_string)
                     else:
                         print "No query to process for", qid, "refinement level", ref_level, "iteration id", iter_qid
                         out = []
                     query_out_refinement_level[qid][ref_level][iter_qid] = out
-                    #print len(query_out_refinement_level[qid][ref_level][iter_qid])
+                    # print len(query_out_refinement_level[qid][ref_level][iter_qid])
 
             query_out_refinement_level[qid][ref_level][0] = out0
 
