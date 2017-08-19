@@ -13,8 +13,8 @@
 |Superspreader | No| 
 |Port Scan | No| 
 |DDoS | No| 
-|Traffic Asymmetry | No| 
-|SSh Bruteforce| No| 
+|Traffic Asymmetry |Yes| 
+|SSh Bruteforce| Yes| 
 
 
 
