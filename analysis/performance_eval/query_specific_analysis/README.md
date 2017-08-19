@@ -6,15 +6,14 @@
 |New Connections  | Yes| 
 |Completed Flows |Yes| 
 |Slowloris |Yes| 
-|Flow Distribution | No| 
 |Dup Acks|Yes| 
+|Traffic Asymmetry |Yes| 
+|SSh Bruteforce| Yes| 
 |HH | No| 
-|SYN Flood Attack | No| 
 |Superspreader | No| 
 |Port Scan | No| 
 |DDoS | No| 
-|Traffic Asymmetry |Yes| 
-|SSh Bruteforce| Yes| 
+|Flow Distribution | No| 
 
 
 
