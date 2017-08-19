@@ -7,6 +7,7 @@ import time
 import datetime
 import math
 import json
+import numpy as np
 
 from sonata.query_engine.sonata_queries import *
 from sonata.core.training.utils import get_spark_context_batch, create_spark_context
@@ -42,33 +43,28 @@ def analyse_query(fname):
              )
     print n_syn.take(5), n_syn.count()
 
-    n_synack = (packets
-                .filter(lambda s: str(s[-4]) == '6')
-                .filter(lambda s: str(s[-1]) == '17')
-                .map(lambda s: (s[3], 1))
-                .reduceByKey(lambda x, y: x + y)
-                )
-    print n_synack.take(5), n_synack.count()
-
-    n_ack = (packets
+    n_fin = (packets
              .filter(lambda s: str(s[-4]) == '6')
-             .filter(lambda s: str(s[-1]) == '16')
+             .filter(lambda s: str(s[-1]) == '1')
              .map(lambda s: (s[3], 1))
              .reduceByKey(lambda x, y: x + y)
              )
-    print n_ack.take(5), n_ack.count()
+    print n_fin.take(5), n_fin.count()
 
-    Th = 5
+    Th = 0
 
-    victim = (n_syn
-              .join(n_synack)
-              .map(lambda s: (s[0], sum(list(s[1]))))
-              .join(n_ack)
+    victim = (n_fin
+              .join(n_syn)
               .map(lambda s: (s[0], s[1][0] - s[1][1]))
-              .filter(lambda s: s[1] > Th)
+              .filter(lambda s: s[1] >= Th)
               )
 
     print victim.take(10), victim.count()
+    data = victim.map(lambda s: s[1]).collect()
+    if len(data) > 0:
+        print "Total Keys", len(data), "max", max(data), "min", min(data)
+        print "Mean", np.mean(data), "Median", np.median(data), "75 %", np.percentile(data, 75), \
+            "95 %", np.percentile(data, 95), "99 %", np.percentile(data, 99), "99.9 %", np.percentile(data, 99.9)
 
 
 if __name__ == '__main__':

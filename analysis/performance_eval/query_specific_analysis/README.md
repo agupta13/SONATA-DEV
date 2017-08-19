@@ -5,7 +5,7 @@
 |SYN Flood Attack |  Yes| 
 |New Connections  | Yes| 
 |Completed Flows | No| 
-|Slowloris | No| 
+|Slowloris |Yes| 
 |Flow Distribution | No| 
 |Dup Acks|Yes| 
 |HH | No| 
