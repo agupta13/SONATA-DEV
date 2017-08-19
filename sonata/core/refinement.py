@@ -41,8 +41,10 @@ def get_thresh(training_data, spark_query, spread, refinement_level, satisfied_s
         data.sort()
         # print "Values at refinement level", refinement_level
         # print data
-        thresh = min(data)
-        if thresh == 1:
+        thresh = 2
+        if len(data) > 0:
+            thresh = min(data)
+        if thresh <= 1:
             thresh += 1
         # print data, thresh
 
@@ -111,6 +113,7 @@ class Refinement(object):
             # print (self.per_query_refinement_key)
             self.is_refinement_enabled = True
             self.refinement_key = list(tmp_refinement_key)[0]
+            print "Selected refinement key", self.refinement_key
 
             # Add timestamp for each key
             self.add_timestamp_key()

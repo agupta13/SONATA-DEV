@@ -265,7 +265,6 @@ def update_counts(sc, queries, query_out, iter_qid, delta, bits_count, packet_co
 
 def create_spark_context():
     from pyspark import SparkContext, SparkConf
-    from sonata.system_config import TD_PATH, T
     conf = (SparkConf()
             .setMaster("local[*]")
             .setAppName("SONATA-Training")
@@ -281,7 +280,7 @@ def create_spark_context():
     return sc
 
 
-def get_spark_context_batch(sc):
-    # Load training data
-    timestamps, training_data = shard_training_data(sc, TD_PATH, T)
-    return timestamps, training_data
+# def get_spark_context_batch(sc):
+#     # Load training data
+#     timestamps, training_data = shard_training_data(sc, TD_PATH, T)
+#     return timestamps, training_data

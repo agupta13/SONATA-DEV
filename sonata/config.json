@@ -3,7 +3,7 @@
   "on_server": {
     "YES": {
       "sonata": {
-        "refinement_keys": ["ipv4.dstIP", "ipv4.srcIP"],
+        "refinement_keys": ["ipv4_dstIP", "ipv4_srcIP"],
         "dp": "p4",
         "sp": "spark",
         "sm_conf": {
@@ -31,7 +31,7 @@
     },
     "NO": {
       "sonata": {
-        "refinement_keys": ["ipv4.dstIP", "ipv4.srcIP"],
+        "refinement_keys": ["ipv4_dstIP", "ipv4_srcIP"],
         "dp": "p4",
         "sp": "spark",
         "sm_conf": {

@@ -106,15 +106,17 @@ def get_refinement_keys(query, refinement_keys_set):
         red_keys = red_keys.intersection(query.refinement_headers)
 
     else:
-        # print "Reached leaf node", query.qid
+        print "Reached leaf node", query.qid
         red_keys = set(query.basic_headers)
         for operator in query.operators:
             # Extract reduction keys from first reduce/distinct operator
+            print operator.name, operator.keys, red_keys
             if operator.name in ['Distinct', 'Reduce']:
                 red_keys = red_keys.intersection(set(operator.keys))
 
+    red_keys = red_keys.intersection(refinement_keys_set)
     print "Reduction Key Search", query.qid, red_keys
-    return red_keys.intersection(refinement_keys_set)
+    return red_keys
 
 
 def generate_composed_spark_queries(reduction_key, basic_headers, query_tree, qid_2_query, composed_queries={}):

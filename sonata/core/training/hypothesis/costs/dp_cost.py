@@ -32,7 +32,12 @@ def get_data_plane_cost(sc, operator_name, transformation_function, query_out, t
             tmp = sc.parallelize(query_out)
             n_bits_wo_cmsketch = bits_per_element.join(tmp).map(lambda s: (s[0], math.ceil(s[1][0] * (len(s[1][1])))))
             print "W/O Sketches", n_bits_wo_cmsketch.collect()
-            n_bits_wo_cmsketch_max = max(n_bits_wo_cmsketch.map(lambda s: s[1]).collect())
+            tmp = n_bits_wo_cmsketch.map(lambda s: s[1]).collect()
+            if len(tmp) > 0:
+                n_bits_wo_cmsketch_max = max(tmp)
+            else:
+                n_bits_wo_cmsketch_max = 32
+
 
             ## number of bits required with count min sketch
 
@@ -53,7 +58,11 @@ def get_data_plane_cost(sc, operator_name, transformation_function, query_out, t
 
             n_bits_sketch = w.join(bits_per_element).map(lambda s: (s[0], int(s[1][0] * s[1][1] * d)))
             # print "With Sketches", n_bits_sketch.collect()
-            n_bits_sketch_max = max(n_bits_sketch.map(lambda s: s[1]).collect())
+            tmp = n_bits_sketch.map(lambda s: s[1]).collect()
+            if len(tmp) > 0:
+                n_bits_sketch_max = max(tmp)
+            else:
+                n_bits_sketch_max = 32
             # print "With Sketches", n_bits_sketch_max, "W/o Sketches", n_bits_wo_cmsketch_max
 
             n_bits_min = min([n_bits_wo_cmsketch_max, n_bits_sketch_max])
