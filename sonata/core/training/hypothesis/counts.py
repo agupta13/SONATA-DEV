@@ -19,6 +19,7 @@ class Counts(object):
     """
 
     query_tree = {}
+    refined_spark_queries = None
 
     def __init__(self, query, sc, training_data, timestamps, refinement_object, target):
 
@@ -46,12 +47,16 @@ class Counts(object):
         self.generate_refined_spark_queries()
 
         for qid in self.refined_spark_queries:
-            print "Processing Refined Queries for cost...", qid, self.refined_spark_queries[qid]
-            self.query_cost_transit_fname = 'query_cost_transit_' + str(qid) + '.pickle'
+            # print "Processing Refined Queries for cost...", qid, self.refined_spark_queries[qid]
+            import time
+            import datetime
+            tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))
+            self.query_cost_transit_fname = 'data/query_counts_transit_' + str(qid) + '_' + tmp + '.pickle'
             self.get_transit_query_output(qid)
+
             dump_data(self.query_out_transit, self.query_cost_transit_fname)
-            with open(self.query_cost_transit_fname, 'r') as f:
-                self.query_out_transit = pickle.load(f)
+            # with open(self.query_cost_transit_fname, 'r') as f:
+            #     self.query_out_transit = pickle.load(f)
 
     def get_transit_query_output(self, qid):
         """
@@ -86,7 +91,7 @@ class Counts(object):
 
                 query_cost_transit[qid][transit][iter_qid] = eval(transit_query_string)
                 print transit, iter_qid, out[:2], query_cost_transit[qid][transit][iter_qid][:2]
-                print transit_query_string
+                # print transit_query_string
 
                 # break
 
@@ -119,7 +124,7 @@ class Counts(object):
                         query_cost_transit[qid][transit][iter_qid_curr] = eval(transit_query_string)
                         # print transit, transit_query_string
                         print transit, iter_qid_curr, query_cost_transit[qid][transit][iter_qid_curr][:2]
-                        print transit_query_string
+                        # print transit_query_string
         #
         self.query_out_transit = query_cost_transit
 
@@ -142,7 +147,7 @@ class Counts(object):
                 query_tree = self.query_tree[n_query]
                 updated_query_tree = {}
                 update_query_tree(query_tree.keys()[0], query_tree, ref_level, updated_query_tree)
-                print updated_query_tree
+                # print updated_query_tree
 
                 refinement_key = [self.refinement_key]
                 # refinement_key = ['ts', self.refinement_key]
@@ -167,8 +172,7 @@ class Counts(object):
                             # print "Adding intermediate Query:", iter_qid, type(tmp1[iter_qid])
                             refined_spark_queries[qid][ref_level][iter_qid] = tmp1[iter_qid]
 
-        # print refined_spark_queries
-        print "Refined Query", refined_spark_queries
+        # print "Refined Query", refined_spark_queries
         self.refined_spark_queries = refined_spark_queries
 
     def get_query_output(self, qid, out0):

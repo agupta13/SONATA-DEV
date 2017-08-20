@@ -35,25 +35,32 @@ class Costs(object):
                 part_ids = [x%1000 for x in iter_qids_curr]
                 print iter_qids_curr
                 for partition_plan in partition_plans:
+                    print "======="
+                    print "Computing Cost for Plan", partition_plan
 
                     bits_count = self.sc.parallelize([(x,0) for x in self.timestamps])
                     packet_count = self.sc.parallelize(self.counts.query_out_transit[qid][transit][0])
-                    print "======="
-                    print "W/O Partition"
-                    #print "Bits Count Cost", bits_count.collect()[:2]
-                    #print "Packet Count Cost", packet_count.collect()[:2]
 
-                    ctr = 0
-                    for iter_qid in iter_qids_curr[1:-1]:
-                        print partition_plan, transit, iter_qid
-                        if iter_qid%1000 == partition_plan:
-                            break
-                        bits_count, packet_count, ctr = update_counts(self.sc, self.counts.refined_spark_queries[qid][ref_level_curr],
-                                                                                   self.counts.query_out_transit[qid][transit],
-                                                                                   iter_qid, self.delta, bits_count, packet_count,
-                                                                                   ctr)
+                    print "W/O Partition"
+                    print "Bits Count Cost", bits_count.collect()[:2]
+                    print "Packet Count Cost", packet_count.collect()[:2]
+
+                    if partition_plan > 0:
+                        ctr = 0
+                        for iter_qid in iter_qids_curr[1:-1]:
+                            print partition_plan, transit, iter_qid
+
+                            bits_count, packet_count, ctr = update_counts(self.sc, self.counts.refined_spark_queries[qid][ref_level_curr],
+                                                                                       self.counts.query_out_transit[qid][transit],
+                                                                                       iter_qid, self.delta, bits_count, packet_count,
+                                                                                       ctr)
+
+                            if iter_qid%1000 == partition_plan:
+                                print "Completed exploration for plan", partition_plan
+                                break
+
                     final_weight = bits_count.join(packet_count).map(lambda s: (s[0], (s[1][0], s[1][1]))).collect()
-                    #print final_weight[:2]
+                    print "Final cost for plan", transit, partition_plan, "is", final_weight[:2]
                     costs[qid][transit][partition_plan] = (final_weight)
         self.costs = costs
         #print self.weights

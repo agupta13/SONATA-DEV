@@ -232,7 +232,7 @@ def generate_query_string_prev_level_out_mapped(qid, ref_level_prev, query_out_r
 
 def dump_data(data, fname):
     with open(fname, 'w') as f:
-        print "Dumping query cost ..." + fname
+        print "Dumping query counts ..." + fname
         pickle.dump(data, f)
 
 
@@ -277,7 +277,7 @@ def create_spark_context():
     conf = (SparkConf()
             .setMaster("local[*]")
             .setAppName("SONATA-Training")
-            .set("spark.executor.memory", "6g")
+            .set("spark.executor.memory", "10g")
             .set("spark.driver.memory", "20g")
             .set("spark.cores.max", "16"))
 

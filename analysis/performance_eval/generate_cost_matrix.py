@@ -7,6 +7,7 @@ import time
 import datetime
 import math
 import json
+import os
 
 from sonata.query_engine.sonata_queries import *
 from sonata.core.training.utils import create_spark_context
@@ -28,8 +29,14 @@ def parse_log_line(logline):
 
 def generate_cost_matrix():
     TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv/part-00000'
-    flows_File = TD_PATH
-    qids = [1]
+    # TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv'
+
+    # TD_PATH = '/mnt/caida_20160121080147_transformed'
+
+    baseDir = os.path.join(TD_PATH)
+    flows_File = os.path.join(baseDir, '*.csv')
+
+    qids = [5]
     sc = create_spark_context()
 
     with open('sonata/config.json') as json_data_file:
@@ -47,7 +54,7 @@ def generate_cost_matrix():
         refinement_object = Refinement(query, target, refinement_keys)
         print refinement_object.qid_2_refined_queries
 
-        print "Collecting the training data for the first time ...", training_data.take(2)
+        # print "Collecting the training data for the first time ...", training_data.take(2)
         training_data = sc.parallelize(training_data.collect())
         print "Collecting timestamps for the experiment ..."
         timestamps = training_data.map(lambda s: s[0]).distinct().collect()
@@ -116,7 +123,7 @@ def get_training_query(sc, flows_File, qid):
                                         tcp_flags): str(dPort) == '22')
                          .map(lambda (ts, sIP, sPort, dIP, dPort, nBytes, proto, tcp_seq, tcp_ack,
                                                               tcp_flags): (ts, sIP, sPort, dIP, dPort,
-                                                                           10 * math.ceil(float(nBytes) / 10),
+                                                                           100 * math.ceil(float(nBytes) / 100),
                                                                             proto, tcp_seq, tcp_ack, tcp_flags))
                          )
 
@@ -147,7 +154,7 @@ def get_training_query(sc, flows_File, qid):
              .map(keys=('ipv4_dstIP', 'ipv4_srcIP','nBytes'))
               .map(keys=('ipv4_dstIP', 'ipv4_srcIP'), values=('nBytes',))
               .reduce(keys=('ipv4_dstIP', 'ipv4_srcIP',), func=('sum',))
-              .filter(filter_vals=('nBytes',), func=('geq', '99'))
+              .filter(filter_vals=('nBytes',), func=('geq', '99.9'))
               )
 
     elif qid == 5:
@@ -155,8 +162,8 @@ def get_training_query(sc, flows_File, qid):
         training_data = (sc.textFile(flows_File)
                          .map(parse_log_line)
                          .map(lambda s: tuple([1] + (list(s[1:]))))
-                         .filter(lambda (ts, sIP, sPort, dIP, dPort, nBytes, proto, tcp_seq, tcp_ack,
-                                        tcp_flags): str(proto) == '17')
+                         # .filter(lambda (ts, sIP, sPort, dIP, dPort, nBytes, proto, tcp_seq, tcp_ack,
+                         #                tcp_flags): str(proto) == '17')
                          )
 
         q = (PacketStream(qid)
@@ -185,7 +192,7 @@ def get_training_query(sc, flows_File, qid):
                      )
 
     elif qid == 7:
-
+        # udp ddos
         training_data = (sc.textFile(flows_File)
                          .map(parse_log_line)
                          # .map(lambda s: tuple([int(math.ceil(int(s[0]) / T))] + (list(s[1:]))))

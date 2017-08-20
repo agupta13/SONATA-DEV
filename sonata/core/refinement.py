@@ -18,7 +18,7 @@ def get_thresh(training_data, spark_query, spread, refinement_level, satisfied_s
     if refinement_level == ref_levels[-1]:
         # print spark_query
         query_string = 'training_data.' + spark_query.compile() + '.map(lambda s: s[1]).collect()'
-        print query_string
+        # print query_string
         data = [float(x) for x in (eval(query_string))]
         thresh = 0.0
         if len(data) > 0:
@@ -47,21 +47,21 @@ def get_thresh(training_data, spark_query, spread, refinement_level, satisfied_s
         data = [float(x) for x in (eval(query_string))]
         data.sort()
         print "Values at refinement level", refinement_level
-        print data
+        # print data
         thresh = 2
         if len(data) > 0:
             thresh = min(data)
         if thresh <= 1:
             thresh += 1
-        # print data, thresh
 
-        original_query_string = 'training_data.' + spark_query.compile() + '.map(lambda s: s[1]).collect()'
-        data = [float(x) for x in (eval(original_query_string))]
-        if len(data) > 0:
-            # thresh = int(np.percentile(data, float(spread)))
-            print "Mean", np.mean(data), "Median", np.median(data), "75 %", np.percentile(data, 75), \
-                "95 %", np.percentile(data, 95), "99 %", np.percentile(data, 99)
-        print "Thresh:", thresh, refinement_level
+        # The section below is only useful for debugging
+        # original_query_string = 'training_data.' + spark_query.compile() + '.map(lambda s: s[1]).collect()'
+        # data = [float(x) for x in (eval(original_query_string))]
+        # if len(data) > 0:
+        #     # thresh = int(np.percentile(data, float(spread)))
+        #     print "Mean", np.mean(data), "Median", np.median(data), "75 %", np.percentile(data, 75), \
+        #         "95 %", np.percentile(data, 95), "99 %", np.percentile(data, 99)
+        # print "Thresh:", thresh, refinement_level
 
     return thresh
 
@@ -216,7 +216,7 @@ class Refinement(object):
         for ref_level in reversed_ref_levels:
             for (prev_qid, curr_qid, ref_level_tmp) in self.filter_mappings:
                 if ref_level == ref_level_tmp:
-                    print "Updating filter for", ref_level, prev_qid, curr_qid
+                    # print "Updating filter for", ref_level, prev_qid, curr_qid
                     prev_parent_qid = prev_qid / 10000000
                     current_parent_qid = curr_qid / 10000000
 
