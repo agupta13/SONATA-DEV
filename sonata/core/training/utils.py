@@ -176,7 +176,7 @@ def generate_query_to_collect_transit_cost(transit_query_string, spark_query):
     return transit_query_string
 
 
-def generate_transit_query(curr_query, curr_level_out, prev_level_out_mapped, ref_level_prev, refinement_key):
+def generate_transit_query(curr_query, curr_level_out_fname, prev_level_out_mapped_string, ref_level_prev, refinement_key):
     refinement_key = refinement_key.replace(".", "_")
     if len(curr_query.operators) > 0:
         keys = curr_query.operators[-1].keys
@@ -185,7 +185,7 @@ def generate_transit_query(curr_query, curr_level_out, prev_level_out_mapped, re
         keys = BASIC_HEADERS
         values = ()
 
-    transit_query_string = 'self.sc.parallelize(curr_level_out)'
+    transit_query_string = 'load_rdd(curr_level_out_fname, self.sc)'
     if len(values) > 0:
         transit_query_string += '.map(lambda ((' + ",".join(keys) + '),(' + ",".join(values) + ')):'
         transit_query_string += '((ts, str(IPNetwork(str('+refinement_key+')+"/"+str(' + str(ref_level_prev) + ')).network)),'
@@ -194,22 +194,22 @@ def generate_transit_query(curr_query, curr_level_out, prev_level_out_mapped, re
         transit_query_string += '.map(lambda (' + ",".join(keys) + '): '
         transit_query_string += '((ts, str(IPNetwork(str('+refinement_key+')+"/"+str(' + str(
             ref_level_prev) + ')).network)),(' + ",".join(keys) + ')))'
-    transit_query_string += '.join(prev_level_out_mapped).map(lambda x: x[1][0])'
+    transit_query_string += '.join('+prev_level_out_mapped_string+').map(lambda x: x[1][0])'
     transit_query_string = generate_query_to_collect_transit_cost(transit_query_string, curr_query)
     # print transit_query_string
     return transit_query_string
 
 
 def generate_query_string_prev_level_out_mapped(qid, ref_level_prev, query_out_refinement_level, refined_spark_queries,
-                                                out0, reduction_key):
+                                                out0_fname, reduction_key):
     reduction_key = reduction_key.replace(".", "_")
     if ref_level_prev > 0:
         iter_qids_prev = query_out_refinement_level[qid][ref_level_prev].keys()
         iter_qids_prev.sort()
-        prev_level_out = query_out_refinement_level[qid][ref_level_prev][iter_qids_prev[-1]]
+        prev_level_out_fname = query_out_refinement_level[qid][ref_level_prev][iter_qids_prev[-1]]
         prev_query = refined_spark_queries[qid][ref_level_prev][iter_qids_prev[-1]]
     else:
-        prev_level_out = out0
+        prev_level_out = out0_fname
 
         # We need to filter out result from `curr_level_out` that is not in `prev_level_out`
     if len(prev_query.operators) > 0:
@@ -218,7 +218,7 @@ def generate_query_string_prev_level_out_mapped(qid, ref_level_prev, query_out_r
     else:
         keys = BASIC_HEADERS
         values = ()
-    prev_level_out_mapped_string = 'self.sc.parallelize(prev_level_out)'
+    prev_level_out_mapped_string = 'load_rdd(prev_level_out_fname, self.sc)'
     prev_level_out_mapped_string += '.map(lambda ((' + ",".join(keys) + '),(' + ",".join(values) + ')):'
     # we should apply distinct here at the end so that we have distinct masked keys as output
     # otherwise the join will result in cartesian and we will have duplicate entries for the finer ref level as input
@@ -227,7 +227,7 @@ def generate_query_string_prev_level_out_mapped(qid, ref_level_prev, query_out_r
     print "prev_level_out_mapped_string", prev_level_out_mapped_string, "prev_level", ref_level_prev
 
 
-    return prev_level_out_mapped_string, prev_level_out
+    return prev_level_out_mapped_string, prev_level_out_fname
 
 
 def dump_data(data, fname):
@@ -291,5 +291,5 @@ def create_spark_context():
 
 # def get_spark_context_batch(sc):
 #     # Load training data
-#     timestamps, training_data = shard_training_data(sc, TD_PATH, T)
-#     return timestamps, training_data
+#     timestamps, training_data_fname = shard_training_data(sc, TD_PATH, T)
+#     return timestamps, training_data_fname

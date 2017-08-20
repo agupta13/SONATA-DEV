@@ -14,8 +14,8 @@ from sonata.core.training.utils import create_spark_context
 from sonata.core.integration import Target
 from sonata.core.refinement import get_refined_query_id, Refinement
 from sonata.core.training.hypothesis.hypothesis import Hypothesis
-# from training_queries import get_training_query
 from sonata.system_config import BASIC_HEADERS
+from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH
 
 """
 Schema:
@@ -37,6 +37,8 @@ def generate_cost_matrix():
     flows_File = os.path.join(baseDir, '*.csv')
     flows_File = TD_PATH
 
+
+
     qids = [5]
     sc = create_spark_context()
 
@@ -50,20 +52,27 @@ def generate_cost_matrix():
     target = Target()
 
     for qid in qids:
-        query, training_data = get_training_query(sc, flows_File, qid)
-        print query.qid, query.basic_headers
-        refinement_object = Refinement(query, target, refinement_keys)
-        print refinement_object.qid_2_refined_queries
+        # clean the tmp directory before running the experiment
+        clean_cmd = "rm -rf "+ TMP_PATH + "*"
+        # print "Running command", clean_cmd
+        os.system(clean_cmd)
 
-        # print "Collecting the training data for the first time ...", training_data.take(2)
-        training_data = sc.parallelize(training_data.collect())
+        # get query and query-specific training data
+        query, training_data = get_training_query(sc, flows_File, qid)
+        refinement_object = Refinement(query, target, refinement_keys, sc)
+
+        # print "Collecting the training data for the first time ...", training_data_fname.take(2)
+        training_data_fname = "training_data"
+        dump_rdd(training_data_fname, training_data)
+
+        # training_data_fname = sc.parallelize(training_data_fname.collect())
         print "Collecting timestamps for the experiment ..."
-        timestamps = training_data.map(lambda s: s[0]).distinct().collect()
+        timestamps = load_rdd(training_data_fname, sc).map(lambda s: s[0]).distinct().collect()
         print "#Timestamps: ", len(timestamps)
 
-        refinement_object.update_filter(training_data)
+        refinement_object.update_filter(training_data_fname)
 
-        hypothesis = Hypothesis(query, sc, training_data, timestamps, refinement_object, target)
+        hypothesis = Hypothesis(query, sc, training_data_fname, timestamps, refinement_object, target)
 
         # G = hypothesis.G
         # fname = 'data/hypothesis_graph_'+str(query.qid)+'_'+str(datetime.datetime.fromtimestamp(time.time()))+'.pickle'
@@ -123,16 +132,16 @@ def get_training_query(sc, flows_File, qid):
                          .filter(lambda (ts, sIP, sPort, dIP, dPort, nBytes, proto, tcp_seq, tcp_ack,
                                         tcp_flags): str(dPort) == '22')
                          .map(lambda (ts, sIP, sPort, dIP, dPort, nBytes, proto, tcp_seq, tcp_ack,
-                                                              tcp_flags): (ts, sIP, sPort, dIP, dPort,
-                                                                           100 * math.ceil(float(nBytes) / 100),
-                                                                            proto, tcp_seq, tcp_ack, tcp_flags))
+                                     tcp_flags): (ts, sIP, sPort, dIP, dPort,
+                                                  100 * math.ceil(float(nBytes) / 100),
+                                                  proto, tcp_seq, tcp_ack, tcp_flags))
                          )
 
         q = (PacketStream(qid)
-             .map(keys=('ipv4_dstIP','ipv4_srcIP', 'nBytes'))
-             .distinct(keys=('ipv4_dstIP','ipv4_srcIP', 'nBytes'))
-             .map(keys=('ipv4_dstIP','nBytes',), map_values=('count',), func=('eq', 1,))
-             .reduce(keys=('ipv4_dstIP','nBytes',), func=('sum',))
+             .map(keys=('ipv4_dstIP', 'ipv4_srcIP', 'nBytes'))
+             .distinct(keys=('ipv4_dstIP', 'ipv4_srcIP', 'nBytes'))
+             .map(keys=('ipv4_dstIP', 'nBytes',), map_values=('count',), func=('eq', 1,))
+             .reduce(keys=('ipv4_dstIP', 'nBytes',), func=('sum',))
              .filter(filter_vals=('count',), func=('geq', '99.9'))
              # .map(keys=('ipv4_dstIP',))
              )
@@ -151,12 +160,12 @@ def get_training_query(sc, flows_File, qid):
                          )
 
         q = (PacketStream(qid)
-              # .filter(filter_keys=('proto',), func=('eq', 6))
-             .map(keys=('ipv4_dstIP', 'ipv4_srcIP','nBytes'))
-              .map(keys=('ipv4_dstIP', 'ipv4_srcIP'), values=('nBytes',))
-              .reduce(keys=('ipv4_dstIP', 'ipv4_srcIP',), func=('sum',))
-              .filter(filter_vals=('nBytes',), func=('geq', '99.9'))
-              )
+             # .filter(filter_keys=('proto',), func=('eq', 6))
+             .map(keys=('ipv4_dstIP', 'ipv4_srcIP', 'nBytes'))
+             .map(keys=('ipv4_dstIP', 'ipv4_srcIP'), values=('nBytes',))
+             .reduce(keys=('ipv4_dstIP', 'ipv4_srcIP',), func=('sum',))
+             .filter(filter_vals=('nBytes',), func=('geq', '99.9'))
+             )
 
     elif qid == 5:
         # super spreader
@@ -184,13 +193,13 @@ def get_training_query(sc, flows_File, qid):
                          )
 
         q = (PacketStream(qid)
-                     # .filter(filter_keys=('proto',), func=('eq', 6))
-                     .map(keys=('ipv4_srcIP', 'dPort'))
-                     .distinct(keys=('ipv4_srcIP', 'dPort'))
-                     .map(keys=('ipv4_srcIP',), map_values=('count',), func=('eq', 1,))
-                     .reduce(keys=('ipv4_srcIP',), func=('sum',))
-                     .filter(filter_vals=('count',), func=('geq', '99.99'))
-                     )
+             # .filter(filter_keys=('proto',), func=('eq', 6))
+             .map(keys=('ipv4_srcIP', 'dPort'))
+             .distinct(keys=('ipv4_srcIP', 'dPort'))
+             .map(keys=('ipv4_srcIP',), map_values=('count',), func=('eq', 1,))
+             .reduce(keys=('ipv4_srcIP',), func=('sum',))
+             .filter(filter_vals=('count',), func=('geq', '99.99'))
+             )
 
     elif qid == 7:
         # udp ddos

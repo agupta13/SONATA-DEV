@@ -13,12 +13,12 @@ def get_refined_query_id(query, ref_level):
     return 10000 * query.qid + ref_level
 
 
-def get_thresh(training_data, spark_query, spread, refinement_level, satisfied_sonata_spark_query, ref_levels):
+def get_thresh(training_data_fname, spark_query, spread, refinement_level, satisfied_sonata_spark_query, ref_levels, sc):
     # print " Called for", spark_query.compile()
     if refinement_level == ref_levels[-1]:
         # print spark_query
-        query_string = 'training_data.' + spark_query.compile() + '.map(lambda s: s[1]).collect()'
-        # print query_string
+        query_string = 'load_rdd(training_data_fname, sc).' + spark_query.compile() + '.map(lambda s: s[1]).collect()'
+        print query_string
         data = [float(x) for x in (eval(query_string))]
         thresh = 0.0
         if len(data) > 0:
@@ -38,10 +38,10 @@ def get_thresh(training_data, spark_query, spread, refinement_level, satisfied_s
         # 3. We select the minimum count value for for the keys that are common to both refinement level.
         #    We do join operation to find the common keys.
 
-        refined_satisfied_out = 'training_data.' + satisfied_sonata_spark_query.compile() + \
+        refined_satisfied_out = 'load_rdd(training_data_fname, sc).' + satisfied_sonata_spark_query.compile() + \
                                 '.map(lambda s: (s, 1)).reduceByKey(lambda x,y: x+y)'
         # print refined_satisfied_out
-        query_string = 'training_data.' + spark_query.compile() + \
+        query_string = 'load_rdd(training_data_fname, sc).' + spark_query.compile() + \
                        '.join(' + refined_satisfied_out + ').map(lambda s: s[1][0]).collect()'
         # print query_string
         data = [float(x) for x in (eval(query_string))]
@@ -55,7 +55,7 @@ def get_thresh(training_data, spark_query, spread, refinement_level, satisfied_s
             thresh += 1
 
         # The section below is only useful for debugging
-        # original_query_string = 'training_data.' + spark_query.compile() + '.map(lambda s: s[1]).collect()'
+        # original_query_string = 'training_data_fname.' + spark_query.compile() + '.map(lambda s: s[1]).collect()'
         # data = [float(x) for x in (eval(original_query_string))]
         # if len(data) > 0:
         #     # thresh = int(np.percentile(data, float(spread)))
@@ -101,11 +101,12 @@ class Refinement(object):
     filter_mappings = {}
     qid_2_refined_queries = {}
 
-    def __init__(self, query, target, refinement_keys_set):
+    def __init__(self, query, target, refinement_keys_set, sc):
         self.query = query
         self.target = target
         self.ref_levels = range(0, GRAN_MAX, GRAN)
         self.qid_2_query = get_qid_2_query(self.query)
+        self.sc = sc
 
         self.per_query_refinement_key = {}
         tmp_refinement_key = get_refinement_keys(self.query, refinement_keys_set)
@@ -120,7 +121,7 @@ class Refinement(object):
             # print (self.per_query_refinement_key)
             self.is_refinement_enabled = True
             self.refinement_key = list(tmp_refinement_key)[0]
-            print "Selected refinement key", self.refinement_key
+            # print "Selected refinement key", self.refinement_key
 
             # Add timestamp for each key
             self.add_timestamp_key()
@@ -201,12 +202,12 @@ class Refinement(object):
                     for part_qid in sonata_intermediate_queries:
                         refined_sonata_queries[qid][ref_level][part_qid] = sonata_intermediate_queries[part_qid]
 
-        print "*** Filter Mappings", filter_mappings
+        # print "*** Filter Mappings", filter_mappings
         self.refined_sonata_queries = refined_sonata_queries
         self.filter_mappings = filter_mappings
         self.qid_2_refined_queries = qid_2_queries_refined
 
-    def update_filter(self, training_data):
+    def update_filter(self, training_data_fname):
         spark_queries = {}
         reversed_ref_levels = self.ref_levels[1:]
         reversed_ref_levels.sort(reverse=True)
@@ -253,8 +254,8 @@ class Refinement(object):
                     _, filter_id, spread = self.filter_mappings[(prev_qid, curr_qid, ref_level)]
                     # thresh = -1
 
-                    thresh = get_thresh(training_data, prev_spark_query, spread, ref_level, satisfied_spark_query,
-                                        self.ref_levels)
+                    thresh = get_thresh(training_data_fname, prev_spark_query, spread, ref_level, satisfied_spark_query,
+                                        self.ref_levels, self.sc)
 
                     # Update all the following intermediate Sonata Queries
                     for tmp_qid in qids_after_this_filter:

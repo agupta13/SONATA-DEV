@@ -179,7 +179,7 @@ def copy_spark_operators_to_spark(query, optr):
 
     elif optr.name == 'Join':
         #print "Before Joining", optr.join_query
-        optr.in_stream = 'self.training_data.'
+        optr.in_stream = 'self.training_data_fname.'
         new_join_query = spark.PacketStream(optr.join_query.qid)
         new_join_query.basic_headers = query.basic_headers
         for new_optr in optr.join_query.operators:

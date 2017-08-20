@@ -17,9 +17,9 @@ class Hypothesis(object):
     E = {}
     G = {}
 
-    def __init__(self, query, sc, training_data, timestamps, refinement_object, target):
+    def __init__(self, query, sc, training_data_fname, timestamps, refinement_object, target):
         self.sc = sc
-        self.training_data = training_data
+        self.training_data_fname = training_data_fname
         self.timestamps = timestamps
         self.query = query
         self.refinement_object = refinement_object
@@ -76,7 +76,7 @@ class Hypothesis(object):
                 costs = pickle.load(f)
         else:
             # Run the query over training data to get various counts
-            counts = Counts(self.query, self.sc, self.training_data, self.timestamps, self.refinement_object, self.target)
+            counts = Counts(self.query, self.sc, self.training_data_fname, self.timestamps, self.refinement_object, self.target)
             # Apply the costs model over counts to estimate costs for different edges
             costs = Costs(counts, self.P).costs
             import time

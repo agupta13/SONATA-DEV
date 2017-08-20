@@ -11,7 +11,7 @@ from threading import Thread
 from sonata.core.training.hypothesis.hypothesis import Hypothesis
 from sonata.streaming_driver.streaming_driver import StreamingDriver
 
-# from sonata.core.training.weights.training_data import TrainingData
+# from sonata.core.training.weights.training_data_fname import TrainingData
 from sonata.core.training.utils import get_spark_context_batch, create_spark_context
 
 from sonata.core.training.learn.learn import Learn
@@ -48,7 +48,7 @@ class Runtime(object):
                 self.dp_queries = pickled_queries[0]
                 self.sp_queries = pickled_queries[1]
         else:
-            # (self.timestamps, self.training_data) = get_spark_context_batch(self.sc)
+            # (self.timestamps, self.training_data_fname) = get_spark_context_batch(self.sc)
             # Learn the query plan
             for query in self.queries:
                 target = Target()
@@ -66,10 +66,10 @@ class Runtime(object):
                 #         self.query_plans[query.qid] = pickle.load(f)
                 # else:
                 #     # update the threshold for the refined queries
-                #     refinement_object.update_filter(self.training_data)
+                #     refinement_object.update_filter(self.training_data_fname)
                 #     # Generate hypothesis graph for each query
-                #     # query, sc, training_data, timestamps, refinement_object
-                #     hypothesis = Hypothesis(query, self.sc, self.training_data, self.timestamps,
+                #     # query, sc, training_data_fname, timestamps, refinement_object
+                #     hypothesis = Hypothesis(query, self.sc, self.training_data_fname, self.timestamps,
                 #                             refinement_object, target)
                 #
                 #     # Learn the query plan using the hypothesis graphs

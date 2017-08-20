@@ -21,11 +21,11 @@ class Counts(object):
     query_tree = {}
     refined_spark_queries = None
 
-    def __init__(self, query, sc, training_data, timestamps, refinement_object, target):
+    def __init__(self, query, sc, training_data_fname, timestamps, refinement_object, target):
 
         self.query = query
         self.sc = sc
-        self.training_data = training_data
+        self.training_data_fname = training_data_fname
         self.timestamps = timestamps
         self.target = target
 
@@ -41,7 +41,7 @@ class Counts(object):
         self.query_tree[query.qid] = get_query_tree(query)
         self.query_out = None
 
-        print self.qid_2_query, self.query_tree
+        # print self.qid_2_query, self.query_tree
 
         # Generate Spark queries for the composed & refined SONATA queries
         self.generate_refined_spark_queries()
@@ -63,9 +63,8 @@ class Counts(object):
         Computes per query costs
         :return:
         """
-        out0 = self.training_data.collect()
-        query_cost_transit = {}
-        print "Training Data Out", out0[:2], len(out0)
+        out0_fname = self.training_data_fname
+        query_cost_transit = dict()
         # Iterate over each refined query and collect its output
         # for qid in self.refined_queries:
 
@@ -76,7 +75,7 @@ class Counts(object):
         ref_levels = self.ref_levels
 
         # Get the query output for each refined intermediate queries
-        query_out_refinement_level = self.get_query_output(qid, out0)
+        query_out_refinement_level = self.get_query_output(qid, out0_fname)
 
         # Get the query cost for each refinement transit, i.e. edge in the refinement graph
         # First get the cost for transit (0,ref_level)
@@ -85,12 +84,13 @@ class Counts(object):
             query_cost_transit[qid][transit] = {}
             for iter_qid in self.refined_spark_queries[qid][ref_level].keys():
                 spark_query = self.refined_spark_queries[qid][ref_level][iter_qid]
-                out = query_out_refinement_level[qid][ref_level][iter_qid]
-                transit_query_string = 'self.sc.parallelize(out)'
+                out_fname = query_out_refinement_level[qid][ref_level][iter_qid]
+
+                transit_query_string = 'load_rdd(out_fname, self.sc)'
                 transit_query_string = generate_query_to_collect_transit_cost(transit_query_string, spark_query)
 
                 query_cost_transit[qid][transit][iter_qid] = eval(transit_query_string)
-                print transit, iter_qid, out[:2], query_cost_transit[qid][transit][iter_qid][:2]
+                # print transit, iter_qid, out_fname, query_cost_transit[qid][transit][iter_qid][:2]
                 # print transit_query_string
 
                 # break
@@ -101,24 +101,27 @@ class Counts(object):
                 if ref_level_curr > ref_level_prev:
                     transit = (ref_level_prev, ref_level_curr)
                     query_cost_transit[qid][transit] = {}
-                    prev_level_out_mapped_string, prev_level_out = generate_query_string_prev_level_out_mapped(qid,
-                                                                                                               ref_level_prev,
-                                                                                                               query_out_refinement_level,
-                                                                                                               self.refined_spark_queries,
-                                                                                                               out0,
-                                                                                                               refinement_key)
-                    # print prev_level_out_mapped_string
-                    prev_level_out_mapped = eval(prev_level_out_mapped_string)
-                    tmp = prev_level_out_mapped.collect()
-                    print tmp[:2], len(tmp)
+                    prev_level_out_mapped_string, prev_level_out_fname = generate_query_string_prev_level_out_mapped(qid,
+                                                                                           ref_level_prev,
+                                                                                           query_out_refinement_level,
+                                                                                           self.refined_spark_queries,
+                                                                                           out0_fname,
+                                                                                           refinement_key)
+                    # tmp = load_rdd(prev_level_out_fname, self.sc).collect()
+                    # print tmp[:2]
+                    # print "prev_level_out_mapped_string:", prev_level_out_mapped_string, prev_level_out_fname
+                    # prev_level_out_mapped = eval(prev_level_out_mapped_string)
+                    # tmp = prev_level_out_mapped.collect()
+                    # print tmp[:2]
+
                     # For each intermediate query for `ref_level_curr` in transit (ref_level_prev, ref_level_current),
                     # we filter out entries that do not satisfy the query at level `ref_level_prev`
                     for iter_qid_curr in self.refined_spark_queries[qid][ref_level_curr].keys():
                         # if iter_qid_curr > 0:
-                        curr_level_out = query_out_refinement_level[qid][ref_level_curr][iter_qid_curr]
+                        curr_level_out_fname = query_out_refinement_level[qid][ref_level_curr][iter_qid_curr]
                         curr_query = self.refined_spark_queries[qid][ref_level_curr][iter_qid_curr]
-                        transit_query_string = generate_transit_query(curr_query, curr_level_out,
-                                                                      prev_level_out_mapped, ref_level_prev,
+                        transit_query_string = generate_transit_query(curr_query, curr_level_out_fname,
+                                                                      prev_level_out_mapped_string, ref_level_prev,
                                                                       refinement_key)
                         # print transit, iter_qid_curr, transit_query_string
                         query_cost_transit[qid][transit][iter_qid_curr] = eval(transit_query_string)
@@ -175,7 +178,7 @@ class Counts(object):
         # print "Refined Query", refined_spark_queries
         self.refined_spark_queries = refined_spark_queries
 
-    def get_query_output(self, qid, out0):
+    def get_query_output(self, qid, out0_fname):
         # Get the query output for each refined intermediate queries
         query_out_refinement_level = {}
         query_out_refinement_level[qid] = {}
@@ -186,17 +189,21 @@ class Counts(object):
                     spark_query = self.refined_spark_queries[qid][ref_level][iter_qid]
                     if len(spark_query.compile()) > 0:
                         tmp_compile = spark_query.compile()
-                        query_string = 'self.training_data.' + tmp_compile + '.collect()'
+                        query_string = 'load_rdd(self.training_data_fname, self.sc).' + tmp_compile
                         # print "Processing Query", qid, "refinement level", ref_level, "iteration id", iter_qid, query_string
                         out = eval(query_string)
-                        # print out[:2]
+
                     else:
                         print "No query to process for", qid, "refinement level", ref_level, "iteration id", iter_qid
-                        out = []
-                    query_out_refinement_level[qid][ref_level][iter_qid] = out
+                        out = self.sc.parallelize([])
+
+                    out_fname = "out_"+str(qid)+"_"+str(ref_level)+"_"+str(iter_qid)
+                    # print out_fname
+                    dump_rdd(out_fname, out)
+                    query_out_refinement_level[qid][ref_level][iter_qid] = out_fname
                     # print len(query_out_refinement_level[qid][ref_level][iter_qid])
 
-            query_out_refinement_level[qid][ref_level][0] = out0
+            query_out_refinement_level[qid][ref_level][0] = out0_fname
 
         self.query_out_refinement_level = query_out_refinement_level
 

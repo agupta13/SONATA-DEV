@@ -7,7 +7,7 @@ import pickle
 from multiprocessing.connection import Listener
 
 def load_data():
-    print "load_data called"
+    print "load_rdd called"
     data = {}
     fname = "/home/arp/SONATA-DEV/data/udp_traffic_equinix-chicago.20160121-130000.UTC.csv"
     with open(fname, 'r') as f:

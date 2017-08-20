@@ -9,7 +9,7 @@ import pickle
 
 
 def load_data():
-    print "load_data called"
+    print "load_rdd called"
     data = {}
     fname = "/home/vagrant/dev/data/sample_data/sample_data.csv"
     with open(fname, 'r') as f:

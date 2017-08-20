@@ -8,6 +8,36 @@ import sonata.streaming_driver.query_object as spark
 from sonata.core.training.utils import *
 import numpy as np
 
+TMP_PATH = "/mnt/tmp/"
+
+
+def toCSVLine(data):
+    return ','.join(str(d) for d in data)
+
+
+def extract_keys_and_values(data):
+    if "(" in str(data):
+        data = str(data)
+        key = tuple([str(x) for x in data[1:].split(")")[0].split(",")])
+        values = str(data[1:].split(")")[1])
+        return (key, values)
+    else:
+        return data
+
+
+def dump_rdd(fname,rdd_data):
+    fname = TMP_PATH + fname
+    rdd_data.saveAsPickleFile(fname)
+
+
+def load_rdd(fname, sc):
+    fname = TMP_PATH + fname
+    out = (sc.pickleFile(fname)
+           # .map(parse_log_line)
+           # .map(extract_keys_and_values)
+           )
+    return out
+
 
 def requires_payload_processing(query):
     parse_payload = False
@@ -90,8 +120,8 @@ def get_refinement_keys(query, refinement_keys_set):
     if query.left_child is not None:
         red_keys_left = get_refinement_keys(query.left_child, refinement_keys_set)
         red_keys_right = get_refinement_keys(query.right_child, refinement_keys_set)
-        print "left keys", red_keys_left, query.qid
-        print "right keys", red_keys_right, query.qid
+        # print "left keys", red_keys_left, query.qid
+        # print "right keys", red_keys_right, query.qid
         # TODO: make sure that we better handle the case when first reduce operator has both sIP and dIP as reduction keys
         if len(red_keys_right) > 0:
             red_keys = set(red_keys_left).intersection(red_keys_right)
@@ -101,21 +131,21 @@ def get_refinement_keys(query, refinement_keys_set):
         for operator in query.operators:
             if operator.name in ['Distinct', 'Reduce']:
                 red_keys = red_keys.intersection(set(operator.keys))
-                print query.qid, operator.name, red_keys
+                # print query.qid, operator.name, red_keys
 
         red_keys = red_keys.intersection(query.refinement_headers)
 
     else:
-        print "Reached leaf node", query.qid
+        # print "Reached leaf node", query.qid
         red_keys = set(query.basic_headers)
         for operator in query.operators:
             # Extract reduction keys from first reduce/distinct operator
-            print operator.name, operator.keys, red_keys
+            # print operator.name, operator.keys, red_keys
             if operator.name in ['Distinct', 'Reduce']:
                 red_keys = red_keys.intersection(set(operator.keys))
 
     red_keys = red_keys.intersection(refinement_keys_set)
-    print "Reduction Key Search", query.qid, red_keys
+    # print "Reduction Key Search", query.qid, red_keys
     return red_keys
 
 
