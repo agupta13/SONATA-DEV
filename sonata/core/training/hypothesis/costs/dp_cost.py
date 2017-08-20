@@ -22,15 +22,15 @@ def get_data_plane_cost(sc, operator_name, transformation_function, query_out, t
 
             ## number of bits required w/o using any sketch
             # number of bits required to maintain the count
-            bits_per_element = sc.parallelize(query_out).map(lambda s: (s[0], math.log(max(s[1]), 2)))
+            # bits_per_element = sc.parallelize(query_out).map(lambda s: (s[0], math.log(max(s[1]), 2)))
 
             # in case we want to fix the size of count field to 32 only
-            # bits_per_element = sc.parallelize(query_out).map(lambda s: (s[0], 32))
+            bits_per_element = sc.parallelize(query_out).map(lambda s: (s[0], 32))
 
             # total number of bits required for this data structure
             # print query_out
             tmp = sc.parallelize(query_out)
-            n_bits_wo_cmsketch = bits_per_element.join(tmp).map(lambda s: (s[0], math.ceil(s[1][0] * (len(s[1][1])))))
+            n_bits_wo_cmsketch = bits_per_element.join(tmp).map(lambda s: (s[0], math.ceil(s[1][0] * (s[1][1]))))
             print "W/O Sketches", n_bits_wo_cmsketch.collect()
             tmp = n_bits_wo_cmsketch.map(lambda s: s[1]).collect()
             if len(tmp) > 0:
@@ -38,39 +38,41 @@ def get_data_plane_cost(sc, operator_name, transformation_function, query_out, t
             else:
                 n_bits_wo_cmsketch_max = 32
 
+            n_bits = n_bits_wo_cmsketch
 
-            ## number of bits required with count min sketch
 
-            # number of bits required to maintain the count
-            bits_per_element = sc.parallelize(query_out).map(lambda s: (s[0], math.ceil(math.log(max(s[1]), 2))))
-            # print "bits/elem:", bits_per_element.collect()
-
-            d = math.ceil(math.log(int(1 / delta), 2))
-            # print "d:", d
-            # get the probability of threshold value for the given threshold
-            # print thresh
-            f_th = sc.parallelize(query_out).map(lambda s: (s[0], float(s[1].count(thresh)) / len(s[1])))
-            N = sc.parallelize(query_out).map(lambda s: (s[0], float(sum(s[1]))))
-            # print "f_th:", f_th.collect()
-            # print "N:", N.collect()
-            w = f_th.join(N).map(lambda s: (s[0], math.ceil(4 * s[1][1] * s[1][0] / delta)))
-            # print "w:", w.collect()
-
-            n_bits_sketch = w.join(bits_per_element).map(lambda s: (s[0], int(s[1][0] * s[1][1] * d)))
-            # print "With Sketches", n_bits_sketch.collect()
-            tmp = n_bits_sketch.map(lambda s: s[1]).collect()
-            if len(tmp) > 0:
-                n_bits_sketch_max = max(tmp)
-            else:
-                n_bits_sketch_max = 32
-            # print "With Sketches", n_bits_sketch_max, "W/o Sketches", n_bits_wo_cmsketch_max
-
-            n_bits_min = min([n_bits_wo_cmsketch_max, n_bits_sketch_max])
-            # print n_bits_min
-            if n_bits_min == n_bits_wo_cmsketch_max:
-                n_bits = n_bits_wo_cmsketch
-            else:
-                n_bits = n_bits_sketch
+            # ## number of bits required with count min sketch
+            #
+            # # number of bits required to maintain the count
+            # bits_per_element = sc.parallelize(query_out).map(lambda s: (s[0], math.ceil(math.log(max(s[1]), 2))))
+            # # print "bits/elem:", bits_per_element.collect()
+            #
+            # d = math.ceil(math.log(int(1 / delta), 2))
+            # # print "d:", d
+            # # get the probability of threshold value for the given threshold
+            # # print thresh
+            # f_th = sc.parallelize(query_out).map(lambda s: (s[0], float(s[1].count(thresh)) / len(s[1])))
+            # N = sc.parallelize(query_out).map(lambda s: (s[0], float(sum(s[1]))))
+            # # print "f_th:", f_th.collect()
+            # # print "N:", N.collect()
+            # w = f_th.join(N).map(lambda s: (s[0], math.ceil(4 * s[1][1] * s[1][0] / delta)))
+            # # print "w:", w.collect()
+            #
+            # n_bits_sketch = w.join(bits_per_element).map(lambda s: (s[0], int(s[1][0] * s[1][1] * d)))
+            # # print "With Sketches", n_bits_sketch.collect()
+            # tmp = n_bits_sketch.map(lambda s: s[1]).collect()
+            # if len(tmp) > 0:
+            #     n_bits_sketch_max = max(tmp)
+            # else:
+            #     n_bits_sketch_max = 32
+            # # print "With Sketches", n_bits_sketch_max, "W/o Sketches", n_bits_wo_cmsketch_max
+            #
+            # n_bits_min = min([n_bits_wo_cmsketch_max, n_bits_sketch_max])
+            # # print n_bits_min
+            # if n_bits_min == n_bits_wo_cmsketch_max:
+            #     n_bits = n_bits_wo_cmsketch
+            # else:
+            #     n_bits = n_bits_sketch
 
         else:
             print "Currently not supported"
