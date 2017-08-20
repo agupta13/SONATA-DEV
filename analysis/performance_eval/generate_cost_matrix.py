@@ -35,6 +35,7 @@ def generate_cost_matrix():
 
     baseDir = os.path.join(TD_PATH)
     flows_File = os.path.join(baseDir, '*.csv')
+    flows_File = TD_PATH
 
     qids = [5]
     sc = create_spark_context()
