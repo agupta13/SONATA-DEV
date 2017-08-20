@@ -112,7 +112,8 @@ def get_partition_plans_learning(spark_query, target):
 
 def generate_intermediate_spark_queries(spark_query, refinement_level, target):
     partition_plans_learning = get_partition_plans_learning(spark_query, target)
-    partition_plans_learning += [len(spark_query.operators)]
+    if spark_query.operators[-1].name != 'Filter':
+        partition_plans_learning += [len(spark_query.operators)]
     spark_intermediate_queries = {}
     prev_qid = 0
     filter_mappings = {}
@@ -159,7 +160,10 @@ def generate_query_to_collect_transit_cost(transit_query_string, spark_query):
     if len(spark_query.operators) > 0:
         last_operator_name = spark_query.operators[-1].name
         if last_operator_name == 'Reduce':
-            transit_query_string += '.map(lambda s: (s[0][0], s[1])).groupByKey().map(lambda s: (s[0], list(s[1])))'
+            # transit_query_string += '.map(lambda s: (s[0][0], s[1])).groupByKey().map(lambda s: (s[0], list(s[1])))'
+
+            # only focus on counts right now.
+            transit_query_string += '.map(lambda s: (s[0][0], 1)).reduceByKey(lambda x,y: x+y)'
         else:
             if last_operator_name == 'Distinct':
                 transit_query_string += '.map(lambda s: (s[0], 1)).reduceByKey(lambda x,y: x+y)'
@@ -216,7 +220,12 @@ def generate_query_string_prev_level_out_mapped(qid, ref_level_prev, query_out_r
         values = ()
     prev_level_out_mapped_string = 'self.sc.parallelize(prev_level_out)'
     prev_level_out_mapped_string += '.map(lambda ((' + ",".join(keys) + '),(' + ",".join(values) + ')):'
-    prev_level_out_mapped_string += '((ts,' + str(reduction_key) + '), 1))'
+    # we should apply distinct here at the end so that we have distinct masked keys as output
+    # otherwise the join will result in cartesian and we will have duplicate entries for the finer ref level as input
+    prev_level_out_mapped_string += '((ts,' + str(reduction_key) + '), 1)).distinct()'
+
+    print "prev_level_out_mapped_string", prev_level_out_mapped_string, "prev_level", ref_level_prev
+
 
     return prev_level_out_mapped_string, prev_level_out
 

@@ -97,12 +97,13 @@ class Partition(object):
     def generate_partitioned_queries_learning(self):
         sonata_query = self.query
         partition_plans_learning = self.get_partition_plans_learning(sonata_query)
-        # print partition_plans_learning
+        print "partition_plans_learning", partition_plans_learning
+        print [x.name for x in sonata_query.operators]
         intermediate_learning_queries = {}
         prev_qid = 0
         filter_mappings = {}
         filters_marked = {}
-        for max_operators in partition_plans_learning:
+        for max_operators in partition_plans_learning[:]:
             qid = 1000 * sonata_query.qid + max_operators
             tmp_query = (PacketStream(sonata_query.qid))
             tmp_query.basic_headers = BASIC_HEADERS
@@ -123,6 +124,8 @@ class Partition(object):
                             filters_marked[(qid, self.ref_level, filter_ctr,)] = sonata_query.qid
                             filter_mappings[(prev_qid, qid, self.ref_level)] = (
                                 sonata_query.qid, filter_ctr, operator.func[1])
+                            print "Updating filter mapping", max_operators, qid, prev_qid, filter_ctr
+
                 else:
                     prev_operator = operator
                     copy_operators(tmp_query, operator)
@@ -137,6 +140,7 @@ class Partition(object):
             intermediate_learning_queries[qid] = tmp_query
             prev_qid = qid
 
+        print "Intermediate Queries", intermediate_learning_queries
         self.intermediate_learning_queries = intermediate_learning_queries
         self.filter_mappings = filter_mappings
 
@@ -209,5 +213,8 @@ class Partition(object):
             if can_increment:
                 ctr += 1
                 # print operator.name, partition_plans_learning
-        partition_plans_learning.append(len(query.operators))
+        if query.operators[-1].name != 'Filter':
+            print "Adding last operator"
+            partition_plans_learning.append(len(query.operators))
+
         return partition_plans_learning

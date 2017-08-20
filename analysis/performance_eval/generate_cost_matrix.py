@@ -29,7 +29,7 @@ def parse_log_line(logline):
 def generate_cost_matrix():
     TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv/part-00000'
     flows_File = TD_PATH
-    qids = [5]
+    qids = [1]
     sc = create_spark_context()
 
     with open('sonata/config.json') as json_data_file:
@@ -106,7 +106,7 @@ def get_training_query(sc, flows_File, qid):
              )
 
     elif qid == 3:
-        # number new connections
+        # ssh bruteforce
         training_data = (sc.textFile(flows_File)
                          .map(parse_log_line)
                          .map(lambda s: tuple([1] + (list(s[1:]))))
@@ -130,7 +130,7 @@ def get_training_query(sc, flows_File, qid):
              )
 
     elif qid == 4:
-        # number new connections
+        # heavy hitter
         training_data = (sc.textFile(flows_File)
                          .map(parse_log_line)
                          .map(lambda s: tuple([1] + (list(s[1:]))))
@@ -151,7 +151,7 @@ def get_training_query(sc, flows_File, qid):
               )
 
     elif qid == 5:
-        # number new connections
+        # super spreader
         training_data = (sc.textFile(flows_File)
                          .map(parse_log_line)
                          .map(lambda s: tuple([1] + (list(s[1:]))))
@@ -169,20 +169,19 @@ def get_training_query(sc, flows_File, qid):
              )
 
     elif qid == 6:
-        # number new connections
+        # port scan
         training_data = (sc.textFile(flows_File)
                          .map(parse_log_line)
                          .map(lambda s: tuple([1] + (list(s[1:]))))
                          )
 
-        port_scan = (PacketStream(qid)
+        q = (PacketStream(qid)
                      # .filter(filter_keys=('proto',), func=('eq', 6))
                      .map(keys=('ipv4_srcIP', 'dPort'))
                      .distinct(keys=('ipv4_srcIP', 'dPort'))
                      .map(keys=('ipv4_srcIP',), map_values=('count',), func=('eq', 1,))
                      .reduce(keys=('ipv4_srcIP',), func=('sum',))
                      .filter(filter_vals=('count',), func=('geq', '99.99'))
-                     .map(keys=('ipv4_srcIP',))
                      )
 
     elif qid == 7:

@@ -31,6 +31,13 @@ def get_thresh(training_data, spark_query, spread, refinement_level, satisfied_s
         print "Thresh:", thresh, refinement_level
 
     else:
+        # This is coarser refinement level. For this case we apply the simple algorithm
+        # 1. Execute the query at finest refinement level with appropriate filters to
+        #    determine what keys satisfied the query at the finest level.
+        # 2. We then execute the query at coarser level
+        # 3. We select the minimum count value for for the keys that are common to both refinement level.
+        #    We do join operation to find the common keys.
+
         refined_satisfied_out = 'training_data.' + satisfied_sonata_spark_query.compile() + \
                                 '.map(lambda s: (s, 1)).reduceByKey(lambda x,y: x+y)'
         # print refined_satisfied_out
@@ -39,8 +46,8 @@ def get_thresh(training_data, spark_query, spread, refinement_level, satisfied_s
         # print query_string
         data = [float(x) for x in (eval(query_string))]
         data.sort()
-        # print "Values at refinement level", refinement_level
-        # print data
+        print "Values at refinement level", refinement_level
+        print data
         thresh = 2
         if len(data) > 0:
             thresh = min(data)
@@ -194,6 +201,7 @@ class Refinement(object):
                     for part_qid in sonata_intermediate_queries:
                         refined_sonata_queries[qid][ref_level][part_qid] = sonata_intermediate_queries[part_qid]
 
+        print "*** Filter Mappings", filter_mappings
         self.refined_sonata_queries = refined_sonata_queries
         self.filter_mappings = filter_mappings
         self.qid_2_refined_queries = qid_2_queries_refined
@@ -208,6 +216,7 @@ class Refinement(object):
         for ref_level in reversed_ref_levels:
             for (prev_qid, curr_qid, ref_level_tmp) in self.filter_mappings:
                 if ref_level == ref_level_tmp:
+                    print "Updating filter for", ref_level, prev_qid, curr_qid
                     prev_parent_qid = prev_qid / 10000000
                     current_parent_qid = curr_qid / 10000000
 

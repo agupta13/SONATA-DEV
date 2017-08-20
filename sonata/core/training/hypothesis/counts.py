@@ -60,7 +60,7 @@ class Counts(object):
         """
         out0 = self.training_data.collect()
         query_cost_transit = {}
-        print "Out0", out0[:2]
+        print "Training Data Out", out0[:2], len(out0)
         # Iterate over each refined query and collect its output
         # for qid in self.refined_queries:
 
@@ -83,8 +83,10 @@ class Counts(object):
                 out = query_out_refinement_level[qid][ref_level][iter_qid]
                 transit_query_string = 'self.sc.parallelize(out)'
                 transit_query_string = generate_query_to_collect_transit_cost(transit_query_string, spark_query)
-                print transit, iter_qid, transit_query_string, out[:2]
+
                 query_cost_transit[qid][transit][iter_qid] = eval(transit_query_string)
+                print transit, iter_qid, out[:2], query_cost_transit[qid][transit][iter_qid][:2]
+                print transit_query_string
 
                 # break
 
@@ -100,9 +102,10 @@ class Counts(object):
                                                                                                                self.refined_spark_queries,
                                                                                                                out0,
                                                                                                                refinement_key)
-                    print prev_level_out_mapped_string
+                    # print prev_level_out_mapped_string
                     prev_level_out_mapped = eval(prev_level_out_mapped_string)
-                    print prev_level_out_mapped.collect()[:2]
+                    tmp = prev_level_out_mapped.collect()
+                    print tmp[:2], len(tmp)
                     # For each intermediate query for `ref_level_curr` in transit (ref_level_prev, ref_level_current),
                     # we filter out entries that do not satisfy the query at level `ref_level_prev`
                     for iter_qid_curr in self.refined_spark_queries[qid][ref_level_curr].keys():
@@ -114,7 +117,9 @@ class Counts(object):
                                                                       refinement_key)
                         # print transit, iter_qid_curr, transit_query_string
                         query_cost_transit[qid][transit][iter_qid_curr] = eval(transit_query_string)
+                        # print transit, transit_query_string
                         print transit, iter_qid_curr, query_cost_transit[qid][transit][iter_qid_curr][:2]
+                        print transit_query_string
         #
         self.query_out_transit = query_cost_transit
 
@@ -178,9 +183,9 @@ class Counts(object):
                     if len(spark_query.compile()) > 0:
                         tmp_compile = spark_query.compile()
                         query_string = 'self.training_data.' + tmp_compile + '.collect()'
-                        print(
-                        "Processing Query", qid, "refinement level", ref_level, "iteration id", iter_qid, query_string)
+                        # print "Processing Query", qid, "refinement level", ref_level, "iteration id", iter_qid, query_string
                         out = eval(query_string)
+                        # print out[:2]
                     else:
                         print "No query to process for", qid, "refinement level", ref_level, "iteration id", iter_qid
                         out = []
