@@ -61,7 +61,7 @@ def get_thresh(training_data_fname, spark_query, spread, refinement_level, satis
         #     # thresh = int(np.percentile(data, float(spread)))
         #     print "Mean", np.mean(data), "Median", np.median(data), "75 %", np.percentile(data, 75), \
         #         "95 %", np.percentile(data, 95), "99 %", np.percentile(data, 99)
-        # print "Thresh:", thresh, refinement_level
+        print "Thresh:", thresh, refinement_level
 
     return thresh
 

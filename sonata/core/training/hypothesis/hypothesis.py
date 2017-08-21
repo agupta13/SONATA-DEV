@@ -84,7 +84,7 @@ class Hypothesis(object):
             tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))
             cost_fname = 'data/query_cost_transit_' + str(self.query.qid) + '_' + tmp + '.pickle'
 
-            with open('costs.pickle', 'w') as f:
+            with open(cost_fname, 'w') as f:
                 print "Dumping costs into pickle", cost_fname, "..."
                 pickle.dump(costs, f)
 

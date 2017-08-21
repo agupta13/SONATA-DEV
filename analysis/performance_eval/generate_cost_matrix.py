@@ -15,72 +15,12 @@ from sonata.core.integration import Target
 from sonata.core.refinement import get_refined_query_id, Refinement
 from sonata.core.training.hypothesis.hypothesis import Hypothesis
 from sonata.system_config import BASIC_HEADERS
-from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH
+from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH, parse_log_line
 
 """
 Schema:
 ts,sIP,sPort,dIP,dPort,nBytes,proto,tcp.seq,tcp.ack,tcp.flags
 """
-
-
-def parse_log_line(logline):
-    return tuple(logline.split(","))
-
-
-def generate_cost_matrix():
-    TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv/part-00000'
-    # TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv'
-
-    # TD_PATH = '/mnt/caida_20160121080147_transformed'
-
-    baseDir = os.path.join(TD_PATH)
-    flows_File = os.path.join(baseDir, '*.csv')
-    flows_File = TD_PATH
-
-
-
-    qids = [5]
-    sc = create_spark_context()
-
-    with open('sonata/config.json') as json_data_file:
-        data = json.load(json_data_file)
-
-    conf = data["on_server"][data["is_on_server"]]["sonata"]
-    refinement_keys = conf["refinement_keys"]
-    print "Possible Refinement Keys", refinement_keys
-
-    target = Target()
-
-    for qid in qids:
-        # clean the tmp directory before running the experiment
-        clean_cmd = "rm -rf "+ TMP_PATH + "*"
-        # print "Running command", clean_cmd
-        os.system(clean_cmd)
-
-        # get query and query-specific training data
-        query, training_data = get_training_query(sc, flows_File, qid)
-        refinement_object = Refinement(query, target, refinement_keys, sc)
-
-        # print "Collecting the training data for the first time ...", training_data_fname.take(2)
-        training_data_fname = "training_data"
-        dump_rdd(training_data_fname, training_data)
-
-        # training_data_fname = sc.parallelize(training_data_fname.collect())
-        print "Collecting timestamps for the experiment ..."
-        timestamps = load_rdd(training_data_fname, sc).map(lambda s: s[0]).distinct().collect()
-        print "#Timestamps: ", len(timestamps)
-
-        refinement_object.update_filter(training_data_fname)
-
-        hypothesis = Hypothesis(query, sc, training_data_fname, timestamps, refinement_object, target)
-
-        # G = hypothesis.G
-        # fname = 'data/hypothesis_graph_'+str(query.qid)+'_'+str(datetime.datetime.fromtimestamp(time.time()))+'.pickle'
-        #
-        # # dump the hypothesis graph: {ts:G[ts], ...}
-        # print "Dumping graph to", fname
-        # with open(fname, 'w') as f:
-        #     pickle.dump(G, f)
 
 
 def get_training_query(sc, flows_File, qid):
@@ -225,5 +165,55 @@ def get_training_query(sc, flows_File, qid):
     return q, training_data
 
 
+def generate_counts_and_costs():
+    # TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv/part-00000'
+    # TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv'
+
+    TD_PATH = '/mnt/caida_20160121080147_transformed'
+
+    baseDir = os.path.join(TD_PATH)
+    flows_File = os.path.join(baseDir, '*.csv')
+    # flows_File = TD_PATH
+
+
+
+    qids = [1, 2, 3, 4, 5, 6, 7]
+    sc = create_spark_context()
+
+    with open('sonata/config.json') as json_data_file:
+        data = json.load(json_data_file)
+
+    conf = data["on_server"][data["is_on_server"]]["sonata"]
+    refinement_keys = conf["refinement_keys"]
+    print "Possible Refinement Keys", refinement_keys
+
+    target = Target()
+
+    for qid in qids:
+        # clean the tmp directory before running the experiment
+        clean_cmd = "rm -rf " + TMP_PATH + "*"
+        # print "Running command", clean_cmd
+        os.system(clean_cmd)
+
+        # get query and query-specific training data
+        query, training_data = get_training_query(sc, flows_File, qid)
+        refinement_object = Refinement(query, target, refinement_keys, sc)
+
+        # print "Collecting the training data for the first time ...", training_data_fname.take(2)
+        training_data_fname = "training_data"
+        dump_rdd(training_data_fname, training_data)
+
+        # training_data_fname = sc.parallelize(training_data_fname.collect())
+        print "Collecting timestamps for the experiment ..."
+        timestamps = load_rdd(training_data_fname, sc).map(lambda s: s[0]).distinct().collect()
+        print "#Timestamps: ", len(timestamps)
+
+        refinement_object.update_filter(training_data_fname)
+
+        hypothesis = Hypothesis(query, sc, training_data_fname, timestamps, refinement_object, target)
+
+
 if __name__ == '__main__':
-    generate_cost_matrix()
+    generate_counts_and_costs()
+
+

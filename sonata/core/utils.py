@@ -15,6 +15,10 @@ def toCSVLine(data):
     return ','.join(str(d) for d in data)
 
 
+def parse_log_line(logline):
+    return tuple(logline.split(","))
+
+
 def extract_keys_and_values(data):
     if "(" in str(data):
         data = str(data)
