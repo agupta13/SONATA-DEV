@@ -175,8 +175,6 @@ def generate_counts_and_costs():
     flows_File = os.path.join(baseDir, '*.csv')
     # flows_File = TD_PATH
 
-
-
     qids = [1, 2, 3, 4, 5, 6, 7]
     sc = create_spark_context()
 
@@ -215,5 +213,3 @@ def generate_counts_and_costs():
 
 if __name__ == '__main__':
     generate_counts_and_costs()
-
-
