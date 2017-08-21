@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from gurobipy import Model, GRB, GurobiError
 from tabulate import tabulate
+import math
 
 
 def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_max, bits_max, mode=6):
@@ -225,8 +226,6 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
     # for v in m.getVars():
     #     print(v.varName, v.x)
 
-
-
     # Print the Output
     out_table = []
     refinement_levels = {}
@@ -241,13 +240,15 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
             if I[qid][rid].x == 1:
                 refinement_levels[qid] += "-->" + str(rid)
             out_table.append([])
-            out_table[row_id].append("Q(" + str(qid) + "," + str(rid) + ")")
+            out_table[row_id].append("Q" + str(qid) + "/" + str(rid))
             for sid in range(1, sigma_max + 1):
                 flag = 0
                 for tid in query_2_tables[qid]:
-                    if int(S[qid][rid][tid][sid].x) == 1:
+                    # print(qid, rid, sid, tid, S[qid][rid][tid][sid].x, math.ceil(float(S[qid][rid][tid][sid].x)),
+                    #       math.ceil(float(S[qid][rid][tid][sid].x)) == 1)
+                    if math.ceil(float(S[qid][rid][tid][sid].x)) == 1:
                         for rid_prev in F[qid][rid].keys():
-                            if int(F[qid][rid][rid_prev].x) == 1:
+                            if math.ceil(float(F[qid][rid][rid_prev].x)) == 1:
                                 out_table[row_id].append(cost_matrix[qid][(rid_prev, rid)][tid][1])
                                 flag = 1
                 if flag == 0:

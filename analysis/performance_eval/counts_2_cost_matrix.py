@@ -51,10 +51,10 @@ def generate_cost_matrix_from_counts():
                         print qid, transit, tid2%1000, (n_packets_in, n_bits, n_packets_out)
                         cost_matrix[qid][transit][tid2%1000] = (n_packets_in, n_bits, n_packets_out)
 
-    out_fname = "data/aug_21_experiment_data_cost_matrix.pickle"
-    with open(out_fname, 'w') as f:
-        print "Dumping cost matrix to file", out_fname, " ... "
-        pickle.dump(cost_matrix, f)
+    # out_fname = "data/aug_21_experiment_data_cost_matrix.pickle"
+    # with open(out_fname, 'w') as f:
+    #     print "Dumping cost matrix to file", out_fname, " ... "
+    #     pickle.dump(cost_matrix, f)
 
     return cost_matrix
 

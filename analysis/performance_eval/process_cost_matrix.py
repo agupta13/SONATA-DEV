@@ -34,14 +34,19 @@ if __name__ == '__main__':
 
     modes_2_out = {}
 
-    sigma_max = 4
-    width_max = 1
-    bits_max = 40000
+    sigma_max = 6
+    width_max = 4
+    bits_max = 8000000
+    ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
     ref_levels = [0, 8, 16, 24, 32]
     modes = [2, 3, 4, 6]
 
+
     cost_matrix = prune_refinement_levels(fname, ref_levels)
     Q, query_2_tables, qid_2__r = get_lp_input(cost_matrix, ref_levels)
+
+    modes = [2, 3, 6]
+    Q = [6]
 
     for mode in modes:
         modes_2_out[mode] = solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2__r, sigma_max, width_max, bits_max,
