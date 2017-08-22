@@ -219,7 +219,7 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
                 m.addConstr(I[qid][rid] == 1)
 
     m.write(name + ".lp")
-    # m.setParam(GRB.Param.OutputFlag, 0)
+    m.setParam(GRB.Param.OutputFlag, 0)
     # m.setParam(GRB.Param.LogToConsole, 0)
     m.optimize()
 

@@ -36,7 +36,7 @@ def single_query_analysis():
 
     sigma_max = 2
     width_max = 1
-    bits_max = 1 * 1000000
+    bits_max = 2 * 1000000
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
     # ref_levels = [0, 8, 16, 24, 32]
     modes = [2, 3, 4, 6]
@@ -44,7 +44,7 @@ def single_query_analysis():
     cost_matrix = prune_refinement_levels(fname, ref_levels)
     Q, query_2_tables, qid_2__r = get_lp_input(cost_matrix, ref_levels)
 
-    modes = [2, 3, 4, 6]
+    modes = [2, 3, 6]
     qids = [2]
 
     for qid in qids:
@@ -63,8 +63,8 @@ def multi_query_analysis():
     modes_2_out = {}
 
     sigma_max = 12
-    width_max = 4
-    bits_max = 8 * 1000000
+    width_max = 2
+    bits_max = 1.5 * 1000000
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
     # ref_levels = [0, 8, 16, 24, 32]
     modes = [2, 3, 4, 6]
@@ -73,7 +73,7 @@ def multi_query_analysis():
     Q, query_2_tables, qid_2__r = get_lp_input(cost_matrix, ref_levels)
 
     modes = [2, 3, 4, 6]
-    modes = [4]
+    modes = [6]
     Q = [2, 3, 5, 6, 7]
     all_queries = {
         # 1: [[2], [3], [5], [6], [7]],
@@ -98,8 +98,8 @@ def multi_query_analysis():
 
 
 if __name__ == '__main__':
-    # single_query_analysis()
-    multi_query_analysis()
+    single_query_analysis()
+    # multi_query_analysis()
     out = {1: {0: {2: 572040.0, 3: 77.0, 4: 479.0, 6: 77.0},
                1: {2: 47937.0, 3: 4.0, 4: 77.0, 6: 4.0},
                2: {2: 56695698.0, 3: 1318314.0, 4: 7323.0, 6: 2139.0},
