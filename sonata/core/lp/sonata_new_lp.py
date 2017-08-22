@@ -219,8 +219,8 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
                 m.addConstr(I[qid][rid] == 1)
 
     m.write(name + ".lp")
-    m.setParam(GRB.Param.OutputFlag, 0)
-    m.setParam(GRB.Param.LogToConsole, 0)
+    # m.setParam(GRB.Param.OutputFlag, 0)
+    # m.setParam(GRB.Param.LogToConsole, 0)
     m.optimize()
 
     # for v in m.getVars():
@@ -237,7 +237,7 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
     for qid in Q:
         refinement_levels[qid] = "0"
         for rid in qid_2_R[qid][1:]:
-            if I[qid][rid].x == 1:
+            if float(I[qid][rid].x) > 0.5:
                 refinement_levels[qid] += "-->" + str(rid)
             out_table.append([])
             out_table[row_id].append("Q" + str(qid) + "/" + str(rid))
@@ -246,9 +246,9 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
                 for tid in query_2_tables[qid]:
                     # print(qid, rid, sid, tid, S[qid][rid][tid][sid].x, math.ceil(float(S[qid][rid][tid][sid].x)),
                     #       math.ceil(float(S[qid][rid][tid][sid].x)) == 1)
-                    if math.ceil(float(S[qid][rid][tid][sid].x)) == 1:
+                    if float(S[qid][rid][tid][sid].x) > 0.5 and float(I[qid][rid].x) > 0.5:
                         for rid_prev in F[qid][rid].keys():
-                            if math.ceil(float(F[qid][rid][rid_prev].x)) == 1:
+                            if float(F[qid][rid][rid_prev].x) > 0.5:
                                 out_table[row_id].append(cost_matrix[qid][(rid_prev, rid)][tid][1])
                                 flag = 1
                 if flag == 0:
