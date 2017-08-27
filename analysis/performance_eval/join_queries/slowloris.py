@@ -93,7 +93,7 @@ def analyse_query(fname):
                .filter(lambda s: str(s[-4]) == '6')
                .cache()
                )
-    packets_fname = "training_data_" + str(11)
+    packets_fname = "training_data_" + str(12)
     dump_rdd(packets_fname, packets)
     """
     Schema:
