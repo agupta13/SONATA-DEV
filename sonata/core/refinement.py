@@ -109,18 +109,48 @@ class Refinement(object):
         self.sc = sc
 
         self.per_query_refinement_key = {}
-        tmp_refinement_key = get_refinement_keys(self.query, refinement_keys_set)
-        if tmp_refinement_key:
-            print "***************** Went into refinement **********************"
-            # print str([key for key, value in self.qid_2_query.items()])
+        tmp_refinement_key, refinement_keys_for_query = get_refinement_keys(self.query, refinement_keys_set)
 
-            for key, query in self.qid_2_query.items():
-                tmp_refinement_key_qid = list(get_refinement_keys(query, refinement_keys_set))
-                if tmp_refinement_key_qid: self.per_query_refinement_key[key] = tmp_refinement_key_qid[0]
-                else: self.per_query_refinement_key[key] = None
+        if self.query.left_child is None:
+            if tmp_refinement_key:
+                print "***************** Went into refinement **********************"
+                # print str([key for key, value in self.qid_2_query.items()])
+
+                for key, query in self.qid_2_query.items():
+                    tmp_refinement_key_qid = list(get_refinement_keys(query, refinement_keys_set))
+                    if tmp_refinement_key_qid: self.per_query_refinement_key[key] = tmp_refinement_key_qid[0]
+                    else: self.per_query_refinement_key[key] = None
+                # print (self.per_query_refinement_key)
+                self.is_refinement_enabled = True
+                self.refinement_key = list(tmp_refinement_key)[0]
+                # print "Selected refinement key", self.refinement_key
+
+                # Add timestamp for each key
+                self.add_timestamp_key()
+
+                # Generate refined intermediate SONATA queries
+                self.generate_refined_intermediate_sonata_queries()
+            else:
+                self.is_refinement_enabled = False
+                # refined_query_id = get_refined_query_id(GRAN_MAX)
+        else:
+
+            for key, refinement_keys in refinement_keys_for_query.items():
+                print key, refinement_keys
+                self.per_query_refinement_key[key] = list(refinement_keys)[0]
+
+            self.query_tree = get_query_tree(self.query)
+
+            print "***************** Went into refinement **********************"
+            # # print str([key for key, value in self.qid_2_query.items()])
+            #
+            # for key, query in self.qid_2_query.items():
+            #     tmp_refinement_key_qid = list(get_refinement_keys(query, refinement_keys_set))
+            #     if tmp_refinement_key_qid: self.per_query_refinement_key[key] = tmp_refinement_key_qid[0]
+            #     else: self.per_query_refinement_key[key] = None
             # print (self.per_query_refinement_key)
-            self.is_refinement_enabled = True
-            self.refinement_key = list(tmp_refinement_key)[0]
+            # self.is_refinement_enabled = True
+            # self.refinement_key = list(tmp_refinement_key)[0]
             # print "Selected refinement key", self.refinement_key
 
             # Add timestamp for each key
@@ -128,9 +158,10 @@ class Refinement(object):
 
             # Generate refined intermediate SONATA queries
             self.generate_refined_intermediate_sonata_queries()
-        else:
-            self.is_refinement_enabled = False
-            # refined_query_id = get_refined_query_id(GRAN_MAX)
+            print "Refinement Done"
+
+
+
 
     def get_refined_updated_query(self, qid, ref_level, prev_qid=0, prev_ref_level=0):
         # return query with updated threshold values and map operation---masking based on refinement level
@@ -176,10 +207,12 @@ class Refinement(object):
         filter_mappings = {}
 
         # First update the Sonata queries for different levels
+        print self.qid_2_query.keys()
         for (qid, sonata_query) in self.qid_2_query.iteritems():
             if qid in self.qid_2_query:
                 refined_sonata_queries[qid] = {}
                 refinement_key = self.per_query_refinement_key[qid]
+                print qid, refinement_key
                 ref_levels = self.ref_levels
 
                 for ref_level in ref_levels[1:]:
@@ -190,6 +223,7 @@ class Refinement(object):
                     qid_2_queries_refined[refined_query_id] = refined_sonata_query
 
                     # Create target-specific partition object for this refined query
+                    print "Called Partition for", refined_query_id
                     partition_object = Partition(refined_sonata_query, self.target, ref_level)
                     # generate intermediate queries for learning
                     partition_object.generate_partitioned_queries_learning()
@@ -202,7 +236,7 @@ class Refinement(object):
                     for part_qid in sonata_intermediate_queries:
                         refined_sonata_queries[qid][ref_level][part_qid] = sonata_intermediate_queries[part_qid]
 
-        # print "*** Filter Mappings", filter_mappings
+        print "*** Filter Mappings", filter_mappings
         self.refined_sonata_queries = refined_sonata_queries
         self.filter_mappings = filter_mappings
         self.qid_2_refined_queries = qid_2_queries_refined
@@ -217,11 +251,13 @@ class Refinement(object):
         for ref_level in reversed_ref_levels:
             for (prev_qid, curr_qid, ref_level_tmp) in self.filter_mappings:
                 if ref_level == ref_level_tmp:
-                    # print "Updating filter for", ref_level, prev_qid, curr_qid
+                    print "Updating filter for", ref_level, prev_qid, curr_qid
                     prev_parent_qid = prev_qid / 10000000
                     current_parent_qid = curr_qid / 10000000
 
-                    refinement_key = self.refinement_key
+                    refinement_key = self.per_query_refinement_key[current_parent_qid]
+                    print current_parent_qid, refinement_key
+
                     qids_after_this_filter = filter(lambda x: x >= curr_qid,
                                                     self.refined_sonata_queries[current_parent_qid][ref_level].keys())
 

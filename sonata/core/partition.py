@@ -9,7 +9,7 @@ from sonata.dataplane_driver.query_object import QueryObject as DP_QO
 from sonata.streaming_driver.query_object import PacketStream as SP_QO
 from sonata.query_engine.utils import copy_operators
 from sonata.core.utils import requires_payload_processing, copy_sonata_operators_to_sp_query, \
-    get_flattened_sub_queries, get_payload_fields, flatten_streaming_field_names, filter_payload_fields_append_to_end
+    get_flattened_sub_queries, get_payload_fields, flatten_streaming_field_names, filter_payload_fields_append_to_end,get_intermediate_operators_for_filter_case
 from sonata.query_engine.sonata_queries import PacketStream
 from sonata.system_config import BASIC_HEADERS
 from integration import sonata_2_dp_query
@@ -97,50 +97,85 @@ class Partition(object):
     def generate_partitioned_queries_learning(self):
         sonata_query = self.query
         partition_plans_learning = self.get_partition_plans_learning(sonata_query)
-        # print "partition_plans_learning", partition_plans_learning
+        print sonata_query.qid, " partition_plans_learning", partition_plans_learning
         # print [x.name for x in sonata_query.operators]
         intermediate_learning_queries = {}
         prev_qid = 0
         filter_mappings = {}
         filters_marked = {}
-        for max_operators in partition_plans_learning[:]:
-            qid = 1000 * sonata_query.qid + max_operators
-            tmp_query = (PacketStream(sonata_query.qid))
-            tmp_query.basic_headers = BASIC_HEADERS
-            ctr = 0
-            filter_ctr = 0
-            prev_operator = None
-            for operator in sonata_query.operators:
-                can_increment = True
-                if operator.name != 'Join':
-                    if ctr < max_operators:
-                        copy_operators(tmp_query, operator)
-                        prev_operator = operator
+        if partition_plans_learning:
+            for max_operators in partition_plans_learning[:]:
+                qid = 1000 * sonata_query.qid + max_operators
+                filter_query = (PacketStream(sonata_query.qid))
+                filter_query.basic_headers = BASIC_HEADERS
+                ctr = 0
+                filter_ctr = 0
+                prev_operator = None
+                for operator in sonata_query.operators:
+                    can_increment = True
+                    print sonata_query.qid, operator.name
+                    if operator.name != 'Join':
+                        print "IF"
+                        if ctr < max_operators:
+                            copy_operators(filter_query, operator)
+                            prev_operator = operator
+                        else:
+                            break
+                        if operator.name == 'Filter':
+                            filter_ctr += 1
+                            if (qid, self.ref_level, filter_ctr) not in filters_marked:
+                                filters_marked[(qid, self.ref_level, filter_ctr,)] = sonata_query.qid
+                                filter_mappings[(prev_qid, qid, self.ref_level)] = (
+                                    sonata_query.qid, filter_ctr, operator.func[1])
+                                # print "Updating filter mapping", max_operators, qid, prev_qid, filter_ctr
+
                     else:
-                        break
-                    if operator.name == 'Filter':
-                        filter_ctr += 1
-                        if (qid, self.ref_level, filter_ctr) not in filters_marked:
-                            filters_marked[(qid, self.ref_level, filter_ctr,)] = sonata_query.qid
-                            filter_mappings[(prev_qid, qid, self.ref_level)] = (
-                                sonata_query.qid, filter_ctr, operator.func[1])
-                            # print "Updating filter mapping", max_operators, qid, prev_qid, filter_ctr
+                        print "ELSE"
+                        prev_operator = operator
+                        copy_operators(filter_query, operator)
 
-                else:
-                    prev_operator = operator
-                    copy_operators(tmp_query, operator)
+                    if operator.name == 'Map':
+                        if hasattr(operator, 'func') and len(operator.func) > 0:
+                            if operator.func[0] == 'mask':
+                                can_increment = False
+                    if can_increment:
+                        ctr += 1
 
-                if operator.name == 'Map':
-                    if hasattr(operator, 'func') and len(operator.func) > 0:
-                        if operator.func[0] == 'mask':
-                            can_increment = False
-                if can_increment:
-                    ctr += 1
+                intermediate_learning_queries[qid] = filter_query
+                prev_qid = qid
+        else:
+            prev_operator = None
+            filter_ctr = 0
 
-            intermediate_learning_queries[qid] = tmp_query
-            prev_qid = qid
+            filter_query = (PacketStream(sonata_query.qid))
+            filter_query.basic_headers = BASIC_HEADERS
 
-        # print "Intermediate Queries", intermediate_learning_queries
+            pre_filter_query = (PacketStream(sonata_query.qid))
+            pre_filter_query.basic_headers = BASIC_HEADERS
+
+            filter_qid = 0
+            pre_filter_qid = 0
+            for operator in sonata_query.operators:
+                filter_ctr += 1
+                filter_qid = 1000 * sonata_query.qid + filter_ctr
+                if operator.name == 'Filter':
+                    if (filter_qid, self.ref_level, filter_ctr) not in filters_marked:
+                        filters_marked[(filter_qid, self.ref_level, filter_ctr,)] = sonata_query.qid
+                        filter_mappings[(pre_filter_qid, filter_qid, self.ref_level)] = (
+                            sonata_query.qid, filter_ctr, operator.func[1])
+
+                    copy_operators(filter_query, operator)
+                    intermediate_learning_queries[filter_qid] = filter_query
+                    intermediate_learning_queries[pre_filter_qid] = pre_filter_query
+
+                if operator.name != 'Join':
+                    copy_operators(filter_query, operator)
+                    copy_operators(pre_filter_query, operator)
+                    pre_filter_qid = filter_qid
+
+
+
+        print "Intermediate Queries", intermediate_learning_queries
         self.intermediate_learning_queries = intermediate_learning_queries
         self.filter_mappings = filter_mappings
 
@@ -190,9 +225,12 @@ class Partition(object):
         total_operators = len(query.operators)
         partition_plans_learning = []
         ctr = 1
+        print self.target.supported_operators.keys()
+        print self.target.learning_operators
         for operator in query.operators:
             can_increment = True
             if operator.name in self.target.supported_operators.keys():
+                print "has supported operator", operator.name
                 if hasattr(operator, 'func') and len(operator.func) > 0:
                     if operator.func[0] in self.target.supported_operators[operator.name]:
                         if operator.name in self.target.learning_operators:
