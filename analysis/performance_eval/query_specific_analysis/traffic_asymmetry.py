@@ -11,7 +11,7 @@ import numpy as np
 import math
 
 from sonata.query_engine.sonata_queries import *
-from sonata.core.training.utils import get_spark_context_batch, create_spark_context
+from sonata.core.training.utils import create_spark_context
 from sonata.core.integration import Target
 from sonata.core.refinement import get_refined_query_id, Refinement
 from sonata.core.training.hypothesis.hypothesis import Hypothesis

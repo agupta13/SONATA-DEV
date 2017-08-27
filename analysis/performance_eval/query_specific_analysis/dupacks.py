@@ -8,9 +8,10 @@ import datetime
 import math
 import json
 import numpy as np
+from netaddr import *
 
 from sonata.query_engine.sonata_queries import *
-from sonata.core.training.utils import get_spark_context_batch, create_spark_context
+from sonata.core.training.utils import create_spark_context
 from sonata.core.integration import Target
 from sonata.core.refinement import get_refined_query_id, Refinement
 from sonata.core.training.hypothesis.hypothesis import Hypothesis
@@ -38,6 +39,17 @@ def analyse_query(fname):
     n_dupacks = (packets
                  .filter(lambda s: str(s[-4]) == '6')
                  .filter(lambda s: str(s[-1]) == '16')
+                 .filter(lambda s: ((str(IPNetwork(str(str(s[3])+"/8")).network)) == '185.0.0.0'
+                                    or (str(IPNetwork(str(str(s[3])+"/8")).network)) == '37.0.0.0'
+                                    or (str(IPNetwork(str(str(s[3])+"/8")).network)) == '45.0.0.0'
+                                    or (str(IPNetwork(str(str(s[3])+"/8")).network)) == '64.0.0.0'
+                                    or (str(IPNetwork(str(str(s[3])+"/8")).network)) == '66.0.0.0'
+                                    or (str(IPNetwork(str(str(s[3])+"/8")).network)) == '108.0.0.0'
+                                    or (str(IPNetwork(str(str(s[3])+"/8")).network)) == '198.0.0.0'
+                                    or (str(IPNetwork(str(str(s[3])+"/8")).network)) == '192.0.0.0'
+                                    or (str(IPNetwork(str(str(s[3])+"/8")).network)) == '208.0.0.0'
+                                    )
+                         )
                  .map(lambda s: ((s[3], s[1], s[-2]), 1))
                  .reduceByKey(lambda x, y: x + y)
                  # .filter(lambda s: s[1] > 15000)
