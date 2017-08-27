@@ -34,13 +34,6 @@ def analyse_query(fname):
     s,sIP,sPort,dIP,dPort,nBytes,proto,tcp.seq,tcp.ack,tcp.flags
     """
 
-    n_bytes = (packets
-                .filter(lambda s: str(s[-4]) == '6')
-                .map(lambda s: ((s[3], s[1], s[2]), int(s[5])))
-                .reduceByKey(lambda x, y: x + y)
-             )
-    print n_bytes.take(5), n_bytes.count()
-
     n_conns = (packets
                .filter(lambda s: str(s[-4]) == '6')
                .map(lambda s: ((s[3], s[1], s[2]), 1))
@@ -50,11 +43,20 @@ def analyse_query(fname):
 
     print n_conns.take(5), n_conns.count()
 
+    n_bytes = (packets
+                .filter(lambda s: str(s[-4]) == '6')
+                .map(lambda s: ((s[3], s[1], s[2]), int(s[5])))
+                .reduceByKey(lambda x, y: x + y)
+             )
+    print n_bytes.take(5), n_bytes.count()
+
+
+
     Th = 0
 
-    victim = (n_bytes
-              .join(n_conns)
-              .map(lambda s: (s[0], float(float(s[1][1])/float(s[1][0]))))
+    victim = (n_conns
+              .join(n_bytes)
+              .map(lambda s: (s[0], float(float(s[1][0])/float(s[1][1]))))
               .filter(lambda s: s[1] >= 0.025)
               )
 
