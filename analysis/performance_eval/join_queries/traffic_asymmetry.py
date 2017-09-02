@@ -21,10 +21,6 @@ from sonata.system_config import BASIC_HEADERS
 from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH, parse_log_line
 
 
-def parse_log_line(logline):
-    return tuple(logline.split(","))
-
-
 def get_filter_query(packets_fname, qid, ref_level, Th=[]):
     out = ''
     if qid == 111:
@@ -75,17 +71,9 @@ def get_spark_query(packets_fname, qid, ref_level, part, Th=[]):
     return out
 
 
-def analyse_query(fname):
-
-    # clean the tmp directory before running the experiment
-    clean_cmd = "rm -rf " + TMP_PATH + "*"
-    # print "Running command", clean_cmd
-    os.system(clean_cmd)
+def analyse_query(fname, sc):
 
     final_query_out = {}
-
-
-    sc = create_spark_context()
 
     packets = (sc.textFile(fname)
                .map(parse_log_line)
@@ -94,7 +82,7 @@ def analyse_query(fname):
                .filter(lambda s: str(s[-4]) == '17')
                .cache()
                )
-    print packets.take(5)
+    # print packets.take(5)
     packets_fname = "training_data_" + str(11)
     dump_rdd(packets_fname, packets)
     """
@@ -110,37 +98,29 @@ def analyse_query(fname):
     prev_qids = {111: 113, 112: 113, 113: 113}
     spark_queries = {}
     query_out = {}
-    query_2_percentile_thresh = {111: 95, 113: 95}
+    query_2_percentile_thresh = {111: 99.9, 113: 99.9}
     query_2_actual_thresh = {}
     refinement_levels.sort(reverse=True)
 
     for qid in qids:
-        print "Finding Thresholds for query", qid
         if qid in query_2_percentile_thresh:
             query_2_actual_thresh[qid] = {}
             for ref_level in refinement_levels:
-                print "Finding Thresholds for query", qid, "level", ref_level
                 if qid == 111:
                     tmp_query = get_filter_query(packets_fname, qid, ref_level)
-                    print tmp_query
                     if ref_level < refinement_levels[0]:
                         out_filter = load_rdd(final_query_out[qid], sc)
-                        print out_filter.take(5)
                         refined_satisfied_out = (out_filter
                                                  .map(
                             lambda s: ((s[0][0], str(IPNetwork(str(str(s[0][1]) + "/" + str(ref_level))).network), s[0][2]), 1))
                                                  .reduceByKey(lambda x, y: x + y)
                                                  )
-                        print eval(tmp_query).take(2), refined_satisfied_out.take(2)
                         data = eval(tmp_query).join(refined_satisfied_out).map(lambda s: s[1][0]).collect()
                         # print query_string
                         data = [float(x) for x in data]
-                        print data[:5]
                         thresh = 2
                         if len(data) > 0:
                             thresh = min(data)
-                        if thresh <= 1:
-                            thresh += 1
 
                     else:
                         data = eval(tmp_query).map(lambda s: s[1]).collect()
@@ -149,31 +129,26 @@ def analyse_query(fname):
                         spread = query_2_percentile_thresh[qid]
                         if len(data) > 0:
                             thresh = int(np.percentile(data, float(spread)))
-                            print "Mean", np.mean(data), "Median", np.median(data), "75 %", np.percentile(data, 75), \
-                                "95 %", np.percentile(data, 95), "99 %", np.percentile(data,
-                                                                                       99), "99.9 %", np.percentile(
-                                data, 99.9)
+                            # print "Mean", np.mean(data), "Median", np.median(data), "75 %", np.percentile(data, 75), \
+                            #     "95 %", np.percentile(data, 95), "99 %", np.percentile(data,
+                            #                                                            99), "99.9 %", np.percentile(
+                            #     data, 99.9)
                         if thresh < 1:
                             thresh = 2
 
                         filter_out_fname = "filter_out_" + str(qid) + "_" + str(ref_level)
                         post_filter_query = get_spark_query(packets_fname, qid, ref_level,
                                                             partitioning_plans[qid][-1], Th=[thresh])
-                        print "post_filter_query", post_filter_query
                         filter_out_rdd = eval(post_filter_query)
                         dump_rdd(filter_out_fname, filter_out_rdd)
                         final_query_out[qid] = filter_out_fname
-
-                    print qid, ref_level, thresh, tmp_query
                     query_2_actual_thresh[qid][ref_level] = thresh
 
                 elif qid == 113:
                     tmp_query = get_filter_query(packets_fname, qid, ref_level,
                                                  Th=[query_2_actual_thresh[111][ref_level]])
-                    print qid, tmp_query
                     if ref_level < refinement_levels[0]:
                         out_filter = load_rdd(final_query_out[qid], sc)
-                        print out_filter.take(5)
                         refined_satisfied_out = (out_filter
                                                  .map(
                             lambda s: ((s[0][0], str(IPNetwork(str(str(s[0][1]) + "/" + str(ref_level))).network), s[0][2]), 1))
@@ -183,38 +158,35 @@ def analyse_query(fname):
                         data = eval(tmp_query).join(refined_satisfied_out).map(lambda s: s[1][0]).collect()
                         # print query_string
                         data = [float(x) for x in data]
-                        print data[:5]
                         thresh = 2
                         if len(data) > 0:
                             thresh = min(data)
-                        if thresh <= 1:
-                            thresh += 1
+
 
                     else:
                         data = eval(tmp_query).map(lambda s: s[1]).collect()
-                        print data[:5]
                         thresh = 0.0
                         spread = query_2_percentile_thresh[qid]
                         if len(data) > 0:
                             thresh = int(np.percentile(data, float(spread)))
-                            print "Mean", np.mean(data), "Median", np.median(data), "75 %", np.percentile(data, 75), \
-                                "95 %", np.percentile(data, 95), "99 %", np.percentile(data,
-                                                                                       99), "99.9 %", np.percentile(
-                                data, 99.9)
-                        if thresh < 1:
-                            thresh = 2
+                            # print "Mean", np.mean(data), "Median", np.median(data), "75 %", np.percentile(data, 75), \
+                            #     "95 %", np.percentile(data, 95), "99 %", np.percentile(data,
+                            #                                                            99), "99.9 %", np.percentile(
+                            #     data, 99.9)
+
 
                         filter_out_fname = "filter_out_" + str(qid) + "_" + str(ref_level)
                         post_filter_query = get_spark_query(packets_fname, qid, ref_level, '1',
                                                             Th=[query_2_actual_thresh[111][ref_level], thresh])
-                        print post_filter_query
+                        # print post_filter_query
                         filter_out_rdd = eval(post_filter_query)
                         dump_rdd(filter_out_fname, filter_out_rdd)
                         final_query_out[qid] = filter_out_fname
 
-                    print qid, ref_level, thresh, tmp_query
+                    # print qid, ref_level, thresh, tmp_query
 
                     query_2_actual_thresh[qid][ref_level] = thresh
+                print "Thresholds for query", qid, "level", ref_level, "is", query_2_actual_thresh[qid][ref_level]
 
     query_2_actual_thresh = {113: {32: 24, 16: 36.0}, 111: {32: 16, 16: 16.0}}
     print query_2_actual_thresh
@@ -241,7 +213,7 @@ def analyse_query(fname):
                 spark_queries[qid][ref_level][partid] = tmp_query
                 out_fname = "query_count_transit_" + str(qid) + "_" + str(ref_level) + "_" + str(
                     transit[0]) + "_" + str(transit[1]) + "_" + str(partid)
-                print qid, transit, partid, tmp_query
+                # print qid, transit, partid, tmp_query
                 tmp_transit_rdd = eval(tmp_query)
                 dump_rdd(out_fname, tmp_transit_rdd)
                 query_count_transit_fname[qid][ref_level][partid] = out_fname
@@ -253,7 +225,7 @@ def analyse_query(fname):
 
                 query_count_transit[qid][transit][partid] = tmp_count
 
-    print query_count_transit_fname
+                print qid, transit, partid, tmp_count
 
     for qid in qids:
         for ref_level_prev in refinement_levels:
@@ -264,25 +236,24 @@ def analyse_query(fname):
                         query_count_transit[qid][transit] = {}
                     for partid in partitioning_plans[qid]:
                         prev_qid = prev_qids[qid]
-                        print qid, ref_level_prev, ref_level_curr, partid
                         prev_level_out_rdd = load_rdd(
                             query_count_transit_fname[prev_qid][ref_level_prev][partitioning_plans[prev_qid][-1]], sc)
                         curr_level_rdd = load_rdd(
                             query_count_transit_fname[qid][ref_level_curr][partid], sc)
-                        print prev_level_out_rdd.take(5)
-                        print curr_level_rdd.take(5)
+
                         tmp_count_rdd = (curr_level_rdd.map(
                             lambda s: (str(IPNetwork(str(str(s[0][1]) + "/" + str(ref_level_prev))).network), s))
                                          .join(prev_level_out_rdd.map(lambda s: (s[0][1], 1)).distinct())
                                          .map(lambda s: s[1][0])
                                          )
-                        print tmp_count_rdd.take(2)
                         tmp_count = (tmp_count_rdd
                                      .map(lambda s: (s[0][0], 1))
                                      .reduceByKey(lambda a, b: a + b)
                                      .collect())
-                        print qid, ref_level_prev, ref_level_curr, partid, tmp_count
+
                         query_count_transit[qid][transit][partid] = tmp_count
+
+                        print qid, transit, partid, tmp_count
 
     print query_count_transit
     return query_count_transit
@@ -296,4 +267,11 @@ if __name__ == '__main__':
     baseDir = os.path.join(TD_PATH)
     flows_File = os.path.join(baseDir, '*.csv')
 
-    analyse_query(fname)
+    # clean the tmp directory before running the experiment
+    clean_cmd = "rm -rf " + TMP_PATH + "*"
+    # print "Running command", clean_cmd
+    os.system(clean_cmd)
+
+    sc = create_spark_context()
+
+    analyse_query(fname, sc)

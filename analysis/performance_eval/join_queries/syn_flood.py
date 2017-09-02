@@ -89,15 +89,10 @@ def get_spark_query(packets_fnames, qid, ref_level, part, Th=[]):
     return out
 
 
-def analyse_query(fname):
-    # clean the tmp directory before running the experiment
-    clean_cmd = "rm -rf " + TMP_PATH + "*"
-    # print "Running command", clean_cmd
-    os.system(clean_cmd)
+def analyse_query(fname, sc):
+
 
     final_query_out = {}
-
-    sc = create_spark_context()
 
     packets_syn = (sc.textFile(fname)
                    .map(parse_log_line)
@@ -143,7 +138,7 @@ def analyse_query(fname):
     prev_qids = {91: 94, 92: 94, 94: 94, 93: 94}
     spark_queries = {}
     query_out = {}
-    query_2_percentile_thresh = {94: 99.99}
+    query_2_percentile_thresh = {94: 99.9}
     query_2_actual_thresh = {}
     refinement_levels.sort(reverse=True)
 
@@ -275,4 +270,11 @@ if __name__ == '__main__':
     baseDir = os.path.join(TD_PATH)
     flows_File = os.path.join(baseDir, '*.csv')
 
-    analyse_query(fname)
+    # clean the tmp directory before running the experiment
+    clean_cmd = "rm -rf " + TMP_PATH + "*"
+    # print "Running command", clean_cmd
+    os.system(clean_cmd)
+
+    sc = create_spark_context()
+
+    analyse_query(fname, sc)

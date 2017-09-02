@@ -22,6 +22,8 @@ if __name__ == '__main__':
     # This works with training data since we need to
     # first know how much is 99 percentile and then
     # use that 99 percentile as threshold
+
+    # This is technically flow size distribution query
     heavy_hitter = (PacketStream(1)
                     .map(keys=('ipv4.dstIP', 'ipv4.srcIP'), values=('ipv4.totalLen',))
                     .reduce(keys=('ipv4.dstIP', 'ipv4.srcIP',), func=('sum',))

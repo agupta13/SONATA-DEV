@@ -21,10 +21,6 @@ from sonata.system_config import BASIC_HEADERS
 from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH, parse_log_line
 
 
-def parse_log_line(logline):
-    return tuple(logline.split(","))
-
-
 def get_filter_query(packets_fname, qid, ref_level, Th=[]):
     out = ''
     if qid == 121:
@@ -75,16 +71,9 @@ def get_spark_query(packets_fname, qid, ref_level, part, Th=[]):
     return out
 
 
-def analyse_query(fname):
-
-    # clean the tmp directory before running the experiment
-    clean_cmd = "rm -rf " + TMP_PATH + "*"
-    # print "Running command", clean_cmd
-    os.system(clean_cmd)
+def analyse_query(fname, sc):
 
     final_query_out = {}
-
-    sc = create_spark_context()
 
     packets = (sc.textFile(fname)
                .map(parse_log_line)
@@ -290,4 +279,11 @@ if __name__ == '__main__':
     baseDir = os.path.join(TD_PATH)
     flows_File = os.path.join(baseDir, '*.csv')
 
-    analyse_query(fname)
+    # clean the tmp directory before running the experiment
+    clean_cmd = "rm -rf " + TMP_PATH + "*"
+    # print "Running command", clean_cmd
+    os.system(clean_cmd)
+
+    sc = create_spark_context()
+
+    analyse_query(fname, sc)
