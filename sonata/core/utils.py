@@ -34,6 +34,11 @@ def dump_rdd(fname,rdd_data):
     rdd_data.saveAsPickleFile(fname)
 
 
+def dump_rdd_as_csv(fname, rdd_data):
+    fname = TMP_PATH + fname
+    rdd_data.map(toCSVLine).saveAsTextFile(fname)
+
+
 def load_rdd(fname, sc):
     fname = TMP_PATH + fname
     out = (sc.pickleFile(fname)

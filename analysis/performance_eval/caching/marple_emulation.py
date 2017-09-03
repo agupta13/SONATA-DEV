@@ -2,10 +2,11 @@ import time
 import datetime
 import pickle
 import os
+import glob
 
 from analysis.performance_eval.caching.lru_cache import *
 from sonata.core.training.utils import create_spark_context
-from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH, parse_log_line
+from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH, parse_log_line, dump_rdd_as_csv
 
 """
 Schema:
@@ -52,8 +53,7 @@ memory_sizes = [500000, 1000000, 2000000, 4000000, 8000000]
 packet_outs = {}
 
 
-def get_ordered_packets(total_packets_fname, sc, qid):
-    total_packets = load_rdd(total_packets_fname, sc)
+def get_query_specific_packets(total_packets, qid):
     if len(query_2_filter[qid]) > 0:
         packets = (total_packets
                    .filter(lambda packet: eval(query_2_filter[qid]))
@@ -61,7 +61,7 @@ def get_ordered_packets(total_packets_fname, sc, qid):
     else:
         packets = total_packets
 
-    return packets.collect()
+    return packets
 
 
 TD_PATH = '/mnt/caida_20160121080147_transformed'
@@ -70,30 +70,39 @@ baseDir = os.path.join(TD_PATH)
 flows_File = os.path.join(baseDir, '*.csv')
 sc = create_spark_context()
 # flows_File = '/mnt/caida_20160121080147_transformed/dirAB.out_00000_20160121080100.pcap.csv/part-00000'
-
-# clean the tmp directory before running the experiment
-clean_cmd = "rm -rf " + TMP_PATH + "*"
-# print "Running command", clean_cmd
-os.system(clean_cmd)
-
+print flows_File
 total_packets = (sc.textFile(flows_File).map(parse_log_line))
-total_packets_fname = "total_packets"
-dump_rdd(total_packets_fname, total_packets)
-total_packets = None
-print "Collected All packets"
+print "Total Raw Packets", total_packets.count()
+# dump_rdd(total_packets_fname, total_packets)
 
 for qid in query_2_keys:
+    # clean the tmp directory before running the experiment
+    clean_cmd = "rm -rf " + TMP_PATH + "*"
+    # print "Running command", clean_cmd
+    os.system(clean_cmd)
+
     packet_outs[qid] = {}
-    ordered_packets = get_ordered_packets(total_packets_fname, sc, qid)
-    print "Processing", len(ordered_packets), "packets for query", qid
+    query_packets_rdd = get_query_specific_packets(total_packets, qid)
+    # print "Total Packets for Query", query_packets_rdd.count()
+    query_packet_fname = "query_packets.csv"
+    dump_rdd_as_csv(query_packet_fname, query_packets_rdd)
+    bDir = os.path.join(TMP_PATH, query_packet_fname)
+    fnames = os.listdir(bDir)
+
+    print "Processing packets for query", qid
     for size in memory_sizes:
         # size = size/10
         print "Size", size
         cache = LRUCache(size, query_2_keys[qid])
         total_in = 0
-        for packet in ordered_packets:
-            cache.process_packet(packet)
-            total_in += 1
+        for fname in fnames:
+            if fname.startswith('part') and 'crc' not in fname:
+                with open(bDir+'/'+fname, 'r') as f:
+                    for line in f:
+                        packet = line.split("\n")[0].split(",")
+                        if len(packet) == 10:
+                            cache.process_packet(packet)
+                            total_in += 1
 
         cached_entries = len(cache.lru.items())
         total_out = cache.out_packets + cached_entries
@@ -104,6 +113,11 @@ for qid in query_2_keys:
         print "Total keys in cache", cached_entries
         print "Total Out Packets", total_out
         packet_outs[qid][size] = (total_out, total_in)
+
+    #     break
+    #
+    # if qid == 2:
+    #     break
 
 tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))
 cost_fname = 'data/query_cost_lru_' + tmp + '.pickle'
