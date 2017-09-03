@@ -48,7 +48,7 @@ query_2_filter = {1: "str(packet[-1])=='16'", 2: "str(packet[-1])=='2'",
                   122: "str(packet[6])=='6'"
                   }
 
-memory_sizes = [500000, 1000000, 2000000, 4000000, 8000000]
+memory_sizes = [500000, 1000000, 2000000, 4000000, 8000000, 16000000]
 # memory_sizes = [80000]
 packet_outs = {}
 

@@ -80,7 +80,6 @@ def analyse_query(fname, sc):
                # set ts = 1 for all packets
                .map(lambda s: tuple([1] + (list(s[1:]))))
                .filter(lambda s: str(s[-4]) == '6')
-               .cache()
                )
     packets_fname = "training_data_" + str(12)
     dump_rdd(packets_fname, packets)

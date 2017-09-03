@@ -10,7 +10,7 @@ import json
 import numpy as np
 
 from sonata.query_engine.sonata_queries import *
-from sonata.core.training.utils import get_spark_context_batch, create_spark_context
+from sonata.core.training.utils import create_spark_context
 from sonata.core.integration import Target
 from sonata.core.refinement import get_refined_query_id, Refinement
 from sonata.core.training.hypothesis.hypothesis import Hypothesis
@@ -37,27 +37,32 @@ def analyse_query(fname):
     n_conns = (packets
                .filter(lambda s: str(s[-4]) == '6')
                .map(lambda s: ((s[3], s[1], s[2]), 1))
+               .distinct()
+               .map(lambda s: (s[0][0], 1))
                .reduceByKey(lambda x, y: x + y)
                .filter(lambda s: s[1] > 100)
                )
 
     print n_conns.take(5), n_conns.count()
+    data = n_conns.map(lambda s: s[1]).collect()
+    if len(data) > 0:
+        print "Total Keys", len(data), "max", max(data), "min", min(data)
+        print "Mean", np.mean(data), "Median", np.median(data), "75 %", np.percentile(data, 75), \
+            "95 %", np.percentile(data, 95), "99 %", np.percentile(data, 99), "99.9 %", np.percentile(data, 99.9)
 
     n_bytes = (packets
                 .filter(lambda s: str(s[-4]) == '6')
-                .map(lambda s: ((s[3], s[1], s[2]), int(s[5])))
+                .map(lambda s: (s[3], int(s[5])))
                 .reduceByKey(lambda x, y: x + y)
              )
     print n_bytes.take(5), n_bytes.count()
-
-
 
     Th = 0
 
     victim = (n_conns
               .join(n_bytes)
               .map(lambda s: (s[0], float(float(s[1][0])/float(s[1][1]))))
-              .filter(lambda s: s[1] >= 0.025)
+              # .filter(lambda s: s[1] >= 0.025)
               )
 
     print victim.take(10), victim.count()

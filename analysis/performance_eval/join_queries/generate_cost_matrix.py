@@ -28,6 +28,7 @@ import analysis.performance_eval.join_queries.slowloris as q12
 
 def generate_counts(data_fname):
     qids = [9, 10, 11, 12]
+    qids = [11]
     qid_2_modules = {9: q9, 10: q10, 11: q11, 12: q12}
 
     sc = create_spark_context()
@@ -50,11 +51,11 @@ def generate_counts(data_fname):
 
 
 if __name__ == '__main__':
-    fname = "/mnt/dirAB.out_00000_20160121080100.transformed.csv/part-00000"
+    fname = "/mnt/caida_20160121080147_transformed/dirAB.out_00000_20160121080100.pcap.csv/part-00000"
 
     TD_PATH = '/mnt/caida_20160121080147_transformed'
 
     baseDir = os.path.join(TD_PATH)
     flows_File = os.path.join(baseDir, '*.csv')
 
-    generate_counts(flows_File)
+    generate_counts(fname)

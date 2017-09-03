@@ -21,6 +21,20 @@ from sonata.system_config import BASIC_HEADERS
 from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH, parse_log_line
 
 
+def get_diff(s):
+    if s[1][1] is None:
+        return tuple([s[0], s[1][0]])
+    else:
+        return tuple([s[0], s[1][0] - 2*s[1][1]])
+
+
+def get_sum(s):
+    if s[1][1] is None:
+        return tuple([s[0], s[1][0]])
+    else:
+        return tuple([s[0], s[1][0] + s[1][1]])
+
+
 def get_filter_query(packets_fname, qid, ref_level, Th=[]):
     out = ''
     if qid == 111:
@@ -29,10 +43,10 @@ def get_filter_query(packets_fname, qid, ref_level, Th=[]):
 
     elif qid == 113:
         out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[2]), 1))' \
-              '.reduceByKey(lambda x, y: x + y)).filter(lambda s: s[1] > %d).join(' \
+              '.reduceByKey(lambda x, y: x + y)).filter(lambda s: s[1] > %d).leftOuterJoin(' \
               'load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[1])+"/%s")).network), s[4]), 1))' \
               '.reduceByKey(lambda x, y: x + y))' \
-              '.map(lambda s: (s[0], s[1][0]-s[1][1]))' % (str(ref_level), Th[0], str(ref_level))
+              '.map(lambda s: get_diff(s))' % (str(ref_level), Th[0], str(ref_level))
 
     return out
 
@@ -62,10 +76,10 @@ def get_spark_query(packets_fname, qid, ref_level, part, Th=[]):
 
     elif qid == 113:
         out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[2]), 1))' \
-              '.reduceByKey(lambda x, y: x + y)).filter(lambda s: s[1] > %d).join(' \
+              '.reduceByKey(lambda x, y: x + y)).filter(lambda s: s[1] > %d).leftOuterJoin(' \
               'load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[1])+"/%s")).network), s[4]), 1))' \
               '.reduceByKey(lambda x, y: x + y))' \
-              '.map(lambda s: (s[0], s[1][0]-s[1][1])).filter(lambda s: s[1]>= %d)' % (str(ref_level), Th[0],
+              '.map(lambda s: get_diff(s)).filter(lambda s: s[1]>= %d)' % (str(ref_level), Th[0],
                                                                                        str(ref_level), Th[1])
 
     return out
@@ -165,6 +179,7 @@ def analyse_query(fname, sc):
 
                     else:
                         data = eval(tmp_query).map(lambda s: s[1]).collect()
+                        print data[:2]
                         thresh = 0.0
                         spread = query_2_percentile_thresh[qid]
                         if len(data) > 0:
@@ -188,7 +203,7 @@ def analyse_query(fname, sc):
                     query_2_actual_thresh[qid][ref_level] = thresh
                 print "Thresholds for query", qid, "level", ref_level, "is", query_2_actual_thresh[qid][ref_level]
 
-    query_2_actual_thresh = {113: {32: 24, 16: 36.0}, 111: {32: 16, 16: 16.0}}
+    # query_2_actual_thresh = {113: {32: 24, 16: 36.0}, 111: {32: 16, 16: 16.0}}
     print query_2_actual_thresh
 
     query_count_transit_fname = {}
