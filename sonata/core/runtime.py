@@ -111,7 +111,7 @@ class Runtime(object):
 
                 # print "# of iteration levels", len(final_plan)
                 # prev_r = 0
-                # for (r, p, l) in final_plan:
+                # for (r, p, cache) in final_plan:
                 #     # Get the query id
                 #     refined_query_id = get_refined_query_id(query, r)
                 #

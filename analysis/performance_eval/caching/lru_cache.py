@@ -11,24 +11,33 @@ ts, sIP, sPort, dIP, dPort, nBytes, proto, sMac, dMac, tcp_seq, tcp_ack, ..., tc
 
 class LRUCache(object):
     out_packets = 0
-    key_2_index = {'ts': 0, 'sIP': 1, 'sPort': 2, 'dIP': 3, 'dPort': 4, 'nBytes': 5, 'proto': 6, 'tcp_seq': 9,
-                   'tcp_ack': 10, 'tcp_flags': -1}
+    key_2_index = {'ts': 0, 'sIP': 1, 'sPort': 2, 'dIP': 3, 'dPort': 4, 'nBytes': 5, 'proto': 6, 'tcp_seq': 7,
+                   'tcp_ack': 8, 'tcp_flags': -1}
+    keys_2_bits = {'ts': 0, 'sIP': 32, 'sPort': 16, 'dIP': 32, 'dPort': 16, 'nBytes': 32, 'proto': 8, 'tcp_seq': 32,
+                   'tcp_ack': 32, 'tcp_flags': 8}
     five_tuple_size = 104
+    reduction_key_size = 0
     counter_size = 32
     cache_size = 0
 
     def __init__(self, size, reduction_keys=list()):
         self.size = size
+        self.reduction_keys = reduction_keys
+        self.update_reduction_key_size()
         self.compute_cache_size()
         self.lru = LRU(self.cache_size, callback=self.evicted)
-        self.reduction_keys = reduction_keys
+
 
     def evicted(self, key, value):
         # print "evicting key: %s" % (key)
         self.out_packets += 1
 
+    def update_reduction_key_size(self):
+        for red_key in self.reduction_keys:
+            self.reduction_key_size += self.keys_2_bits[red_key]
+
     def compute_cache_size(self):
-        self.cache_size = int(math.floor(float(self.size)/(self.counter_size+self.five_tuple_size)))
+        self.cache_size = int(math.floor(float(self.size)/(self.counter_size+self.reduction_key_size)))
 
     def process_packet(self, packet):
         k = ",".join([str(packet[self.key_2_index[red_key]]) for red_key in self.reduction_keys])

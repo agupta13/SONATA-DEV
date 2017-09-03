@@ -441,7 +441,7 @@ backend      : qt4agg
 #keymap.save : s                     # saving current figure
 #keymap.quit : ctrl+w, cmd+w         # close the current figure
 #keymap.grid : g                     # switching on/off a grid in current axes
-#keymap.yscale : l                   # toggle scaling of y-axes ('log'/'linear')
+#keymap.yscale : cache                   # toggle scaling of y-axes ('log'/'linear')
 #keymap.xscale : L, k                # toggle scaling of x-axes ('log'/'linear')
 #keymap.all_axes : a                 # enable all axes
 
