@@ -28,7 +28,7 @@ import analysis.performance_eval.join_queries.slowloris as q12
 
 def generate_counts(data_fname):
     qids = [9, 10, 11, 12]
-    qids = [11]
+    # qids = [12]
     qid_2_modules = {9: q9, 10: q10, 11: q11, 12: q12}
 
     sc = create_spark_context()
@@ -47,15 +47,14 @@ def generate_counts(data_fname):
 
         with open(cost_fname, 'w') as f:
             print "Dumping costs into pickle", cost_fname, "..."
-            # pickle.dump(query_count_transit, f)
+            pickle.dump(query_count_transit, f)
 
 
 if __name__ == '__main__':
-    fname = "/mnt/caida_20160121080147_transformed/dirAB.out_00000_20160121080100.pcap.csv/part-00000"
-
     TD_PATH = '/mnt/caida_20160121080147_transformed'
-
     baseDir = os.path.join(TD_PATH)
-    flows_File = os.path.join(baseDir, '*.csv')
+    fname = os.path.join(baseDir, '*.csv')
+
+    # fname = "/mnt/caida_20160121080147_transformed/dirAB.out_00000_20160121080100.pcap.csv/part-00000"
 
     generate_counts(fname)

@@ -25,12 +25,12 @@ def get_filter_query(packets_fname, qid, ref_level, Th=[]):
     out = ''
     if qid == 121:
         out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), 1))' \
-              '.reduceByKey(lambda x, y: x + y))' % (str(ref_level))
+              '.distinct().map(lambda s: ((s[0][0], s[0][1]), 1)).reduceByKey(lambda x, y: x + y))' % (str(ref_level))
 
     elif qid == 123:
         out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), 1))' \
-              '.reduceByKey(lambda x, y: x + y)).filter(lambda s: s[1] > %d).join(' \
-              'load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), int(s[5])))' \
+              '.distinct().map(lambda s: ((s[0][0], s[0][1]), 1)).reduceByKey(lambda x, y: x + y)).filter(lambda s: s[1] > %d).join(' \
+              'load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network)), int(s[5])))' \
               '.reduceByKey(lambda x, y: x + y))' \
               '.map(lambda s: (s[0], float(s[1][0])/float(s[1][1])))' % (str(ref_level), Th[0], str(ref_level))
 
@@ -41,11 +41,11 @@ def get_spark_query(packets_fname, qid, ref_level, part, Th=[]):
     out = ''
     if qid == 122:
         if part == 0:
-            out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[1])+"/%s")).network),s[1], s[2]),  int(s[5]))))' % (
+            out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[1])+"/%s")).network)), int(s[5]))))' % (
                 str(ref_level))
 
         else:
-            out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[1])+"/%s")).network), s[1], s[2]),  int(s[5]))).reduceByKey(lambda x, y: x + y))' % (
+            out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[1])+"/%s")).network)), int(s[5]))).reduceByKey(lambda x, y: x + y))' % (
                 str(ref_level))
     elif qid == 121:
         if part == 0:
@@ -54,16 +54,20 @@ def get_spark_query(packets_fname, qid, ref_level, part, Th=[]):
 
         elif part == 2:
             out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), 1))' \
-                  '.reduceByKey(lambda x, y: x + y))' % (str(ref_level))
+                  '.distinct())' % (str(ref_level))
 
-        elif part == 3:
+        elif part == 4:
             out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), 1))' \
-                  '.reduceByKey(lambda x, y: x + y).filter(lambda s: s[1] >= %d))' % (str(ref_level), Th[0])
+                  '.distinct().map(lambda s: ((s[0][0], s[0][1]), 1)).reduceByKey(lambda x, y: x + y))' % (str(ref_level))
+
+        elif part == 5:
+            out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), 1))' \
+                  '.distinct().map(lambda s: ((s[0][0], s[0][1]), 1)).reduceByKey(lambda x, y: x + y).filter(lambda s: s[1] >= %d))' % (str(ref_level), Th[0])
 
     elif qid == 123:
         out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), 1))' \
-              '.reduceByKey(lambda x, y: x + y)).filter(lambda s: s[1] >= %d).join(' \
-              'load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), int(s[5])))' \
+              '.distinct().map(lambda s: ((s[0][0], s[0][1]), 1)).reduceByKey(lambda x, y: x + y)).filter(lambda s: s[1] >= %d).join(' \
+              'load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network)), int(s[5])))' \
               '.reduceByKey(lambda x, y: x + y))' \
               '.map(lambda s: (s[0], float(s[1][0])/float(s[1][1]))).filter(lambda s: s[1]>= %d)' % (str(ref_level), Th[0],
                                                                                        str(ref_level), Th[1])
@@ -88,7 +92,7 @@ def analyse_query(fname, sc):
     ts,sIP,sPort,dIP,dPort,nBytes,proto,tcp.seq,tcp.ack,tcp.flags
     """
 
-    partitioning_plans = {121: [0, 2, 3], 122: [0, 2], 123: [2]}
+    partitioning_plans = {121: [0, 2, 4, 5], 122: [0, 2], 123: [2]}
     refinement_levels = range(0, GRAN_MAX, GRAN)[1:]
     print refinement_levels
     counts = {}
@@ -113,7 +117,7 @@ def analyse_query(fname, sc):
                         # print out_filter.take(5)
                         refined_satisfied_out = (out_filter
                                                  .map(
-                            lambda s: ((s[0][0], str(IPNetwork(str(str(s[0][1]) + "/" + str(ref_level))).network), s[0][2], s[0][3]), 1))
+                            lambda s: ((s[0][0], str(IPNetwork(str(str(s[0][1]) + "/" + str(ref_level))).network)), 1))
                                                  .reduceByKey(lambda x, y: x + y)
                                                  )
                         # print eval(tmp_query).take(2), refined_satisfied_out.take(2)
@@ -126,8 +130,9 @@ def analyse_query(fname, sc):
                             thresh = min(data)
 
                     else:
+                        print tmp_query
                         data = eval(tmp_query).map(lambda s: s[1]).collect()
-                        # print data[:5]
+                        print data[:5]
                         thresh = 0.0
                         spread = query_2_percentile_thresh[qid]
                         if len(data) > 0:
@@ -136,7 +141,6 @@ def analyse_query(fname, sc):
                             #     "95 %", np.percentile(data, 95), "99 %", np.percentile(data,
                             #                                                            99), "99.9 %", np.percentile(
                             #     data, 99.9)
-
 
                         filter_out_fname = "filter_out_" + str(qid) + "_" + str(ref_level)
                         post_filter_query = get_spark_query(packets_fname, qid, ref_level,
@@ -161,7 +165,7 @@ def analyse_query(fname, sc):
                         # print out_filter.take(5)
                         refined_satisfied_out = (out_filter
                                                  .map(
-                            lambda s: ((s[0][0], str(IPNetwork(str(str(s[0][1]) + "/" + str(ref_level))).network), s[0][2], s[0][3]), 1))
+                            lambda s: ((s[0][0], str(IPNetwork(str(str(s[0][1]) + "/" + str(ref_level))).network)), 1))
                                                  .reduceByKey(lambda x, y: x + y)
                                                  )
                         # print refined_satisfied_out
@@ -174,8 +178,9 @@ def analyse_query(fname, sc):
                             thresh = min(data)
 
                     else:
+                        print tmp_query
                         data = eval(tmp_query).map(lambda s: s[1]).collect()
-                        # print data[:5]
+                        print data[:5]
                         thresh = 0.0
                         spread = query_2_percentile_thresh[qid]
                         if len(data) > 0:

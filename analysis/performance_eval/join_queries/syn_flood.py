@@ -20,6 +20,7 @@ from sonata.core.training.hypothesis.hypothesis import Hypothesis
 from sonata.system_config import BASIC_HEADERS
 from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH, parse_log_line
 
+
 def get_diff(s):
     if s[1][1] is None:
         return tuple([s[0], s[1][0]])
