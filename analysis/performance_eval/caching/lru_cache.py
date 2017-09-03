@@ -11,6 +11,8 @@ ts, sIP, sPort, dIP, dPort, nBytes, proto, sMac, dMac, tcp_seq, tcp_ack, ..., tc
 
 class LRUCache(object):
     out_packets = 0
+    unique_keys = {}
+    unique_keys_count = 0
     key_2_index = {'ts': 0, 'sIP': 1, 'sPort': 2, 'dIP': 3, 'dPort': 4, 'nBytes': 5, 'proto': 6, 'tcp_seq': 7,
                    'tcp_ack': 8, 'tcp_flags': -1}
     keys_2_bits = {'ts': 0, 'sIP': 32, 'sPort': 16, 'dIP': 32, 'dPort': 16, 'nBytes': 32, 'proto': 8, 'tcp_seq': 32,
@@ -27,7 +29,6 @@ class LRUCache(object):
         self.compute_cache_size()
         self.lru = LRU(self.cache_size, callback=self.evicted)
 
-
     def evicted(self, key, value):
         # print "evicting key: %s" % (key)
         self.out_packets += 1
@@ -41,6 +42,9 @@ class LRUCache(object):
 
     def process_packet(self, packet):
         k = ",".join([str(packet[self.key_2_index[red_key]]) for red_key in self.reduction_keys])
+        # if k not in self.unique_keys:
+        #     self.unique_keys[k] = 0
+        #     self.unique_keys_count += 1
         self.lru[k] = 1
 
 
@@ -59,3 +63,4 @@ if __name__ == '__main__':
     print "Cache Size", l.cache_size
     print "Total In Packets", len(packets)
     print "Total Out Packets", l.out_packets
+    print "Cache size", l.lru.get_size()

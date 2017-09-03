@@ -31,19 +31,29 @@ fnames_ordered = [fname0, fname1, fname2, fname3, fname4, fname5, fname6, fname7
 
 # Note that Marple uses 5 tuples for aggregation irrespective of actual keys required for aggregation
 # Figure 9 says each k,v pair uses 32+104 bits even though it is aggregating over srcIP
-query_2_keys = {8: ['dIP', 'sIP'], 1: ['dIP', 'sIP', 'tcp_ack'], 2: ['dIP'],
+# However, for fair comparison we will only use keys that are required for aggregation.
+query_2_keys = {1: ['dIP', 'sIP', 'tcp_ack'], 2: ['dIP'],
                 3: ['dIP', 'sIP', 'nBytes'], 4: ['dIP', 'sIP'], 5: ['dIP', 'sIP'],
-                6: ['sIP', 'dPort'], 7: ['dIP', 'sIP']}
+                6: ['sIP', 'dPort'], 7: ['dIP', 'sIP'], 8: ['dIP', 'sIP'], 91: ['dIP'], 92: ['dIP'], 93: ['dIP'],
+                101: ['dIP'], 102: ['dIP'], 111: ['dIP', 'sPort'], 112: ['sIP', 'dPort'], 121: ['dIP', 'sIP', 'sPort'],
+                122: ['dIP']
+                }
 
-query_2_filter = {8: "str(packet[6])=='6'", 1: "str(packet[-1])=='16'", 2: "str(packet[-1])=='2'",
-                  3: "str(packet[4])=='22'", 4: "str(packet[6])=='6'", 5: "", 6: "", 7: "str(packet[6])=='17'"}
+query_2_filter = {1: "str(packet[-1])=='16'", 2: "str(packet[-1])=='2'",
+                  3: "str(packet[4])=='22'", 4: "str(packet[6])=='6'", 5: "", 6: "", 7: "str(packet[6])=='17'",
+                  8: "str(packet[6])=='6'", 91: "str(packet[-1])=='2'", 92: "str(packet[-1])=='17'",
+                  93: "str(packet[-1])=='16'", 101: "str(packet[-1])=='2'", 102: "str(packet[-1])=='1'",
+                  111: "str(packet[6])=='17'", 112: "str(packet[6])=='17'", 121: "str(packet[6])=='6'",
+                  122: "str(packet[6])=='6'"
+                  }
 
-memory_sizes = [1000000, 2000000, 4000000, 8000000]
+memory_sizes = [500000, 1000000, 2000000, 4000000, 8000000]
 # memory_sizes = [80000]
 packet_outs = {}
 
 
-def get_ordered_packets(total_packets, qid):
+def get_ordered_packets(total_packets_fname, sc, qid):
+    total_packets = load_rdd(total_packets_fname, sc)
     if len(query_2_filter[qid]) > 0:
         packets = (total_packets
                    .filter(lambda packet: eval(query_2_filter[qid]))
@@ -60,14 +70,24 @@ baseDir = os.path.join(TD_PATH)
 flows_File = os.path.join(baseDir, '*.csv')
 sc = create_spark_context()
 # flows_File = '/mnt/caida_20160121080147_transformed/dirAB.out_00000_20160121080100.pcap.csv/part-00000'
-total_packets = (sc.textFile(flows_File).map(parse_log_line).cache())
+
+# clean the tmp directory before running the experiment
+clean_cmd = "rm -rf " + TMP_PATH + "*"
+# print "Running command", clean_cmd
+os.system(clean_cmd)
+
+total_packets = (sc.textFile(flows_File).map(parse_log_line))
+total_packets_fname = "total_packets"
+dump_rdd(total_packets_fname, total_packets)
+total_packets = None
 print "Collected All packets"
 
 for qid in query_2_keys:
     packet_outs[qid] = {}
-    ordered_packets = get_ordered_packets(total_packets, qid)
+    ordered_packets = get_ordered_packets(total_packets_fname, sc, qid)
     print "Processing", len(ordered_packets), "packets for query", qid
     for size in memory_sizes:
+        # size = size/10
         print "Size", size
         cache = LRUCache(size, query_2_keys[qid])
         total_in = 0
@@ -75,14 +95,19 @@ for qid in query_2_keys:
             cache.process_packet(packet)
             total_in += 1
 
+        cached_entries = len(cache.lru.items())
+        total_out = cache.out_packets + cached_entries
+
         print "Cache Size", cache.cache_size
         print "Total In Packets", total_in
-        print "Total Out Packets", cache.out_packets
-        packet_outs[qid][size] = (cache.out_packets, total_in)
+        print "Total Evicted Packets", cache.out_packets
+        print "Total keys in cache", cached_entries
+        print "Total Out Packets", total_out
+        packet_outs[qid][size] = (total_out, total_in)
 
 tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))
-cost_fname = 'data/query_cost_lru_' + '_' + tmp + '.pickle'
+cost_fname = 'data/query_cost_lru_' + tmp + '.pickle'
 print packet_outs
+print "Dumping data to file", cost_fname, "..."
 with open(cost_fname, 'w') as f:
-    print "Dumping data to file", cost_fname, "..."
-    # pickle.dump(packet_outs, f)
+    pickle.dump(packet_outs, f)

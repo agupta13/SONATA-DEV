@@ -80,7 +80,7 @@ def analyse_query(fname, sc):
                    .map(lambda s: tuple([1] + (list(s[1:]))))
                    .filter(lambda s: str(s[-4]) == '6')
                    # this is place holder flag id, we want this to be '1'
-                   .filter(lambda s: str(s[-1]) == '17')
+                   .filter(lambda s: str(s[-1]) == '1')
                    )
     # print packets_fin.take(2), packets_fin.count()
 
