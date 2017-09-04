@@ -20,15 +20,28 @@ from sonata.core.training.hypothesis.hypothesis import Hypothesis
 from sonata.system_config import BASIC_HEADERS
 from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH, parse_log_line
 
+def get_diff(s):
+    if s[1][1] is None:
+        return tuple([s[0], s[1][0]])
+    else:
+        return tuple([s[0], s[1][0] - 2*s[1][1]])
+
+
+def get_sum(s):
+    if s[1][1] is None:
+        return tuple([s[0], s[1][0]])
+    else:
+        return tuple([s[0], s[1][0] + s[1][1]])
+
 
 def get_filter_query(packets_fnames, qid, ref_level, Th=[]):
     out = ''
     if qid == 103:
         out = '(load_rdd(packets_fnames[0], sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network)), 1))' \
-              '.reduceByKey(lambda x, y: x + y)).join(' \
+              '.reduceByKey(lambda x, y: x + y)).leftOuterJoin(' \
               'load_rdd(packets_fnames[1], sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network)), 1))' \
               '.reduceByKey(lambda x, y: x + y))' \
-              '.map(lambda s: (s[0], s[1][0]-s[1][1]))' % (str(ref_level), str(ref_level))
+              '.map(lambda s: get_diff(s))' % (str(ref_level), str(ref_level))
 
     return out
 
@@ -54,10 +67,10 @@ def get_spark_query(packets_fnames, qid, ref_level, part, Th=[]):
 
     elif qid == 103:
         out = '(load_rdd(packets_fnames[0], sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network)), 1))' \
-              '.reduceByKey(lambda x, y: x + y)).join(' \
+              '.reduceByKey(lambda x, y: x + y)).leftOuterJoin(' \
               'load_rdd(packets_fnames[1], sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network)), 1))' \
               '.reduceByKey(lambda x, y: x + y))' \
-              '.map(lambda s: (s[0], s[1][0]-s[1][1])).filter(lambda s: s[1]>= %d)' % (str(ref_level),
+              '.map(lambda s: get_diff(s)).filter(lambda s: s[1]>= %d)' % (str(ref_level),
                                                                                        str(ref_level), Th[0])
 
     return out

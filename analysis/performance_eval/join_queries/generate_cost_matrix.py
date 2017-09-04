@@ -28,7 +28,7 @@ import analysis.performance_eval.join_queries.slowloris as q12
 
 def generate_counts(data_fname):
     qids = [9, 10, 11, 12]
-    # qids = [12]
+    # qids = [9]
     qid_2_modules = {9: q9, 10: q10, 11: q11, 12: q12}
 
     sc = create_spark_context()
