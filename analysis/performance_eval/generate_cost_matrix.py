@@ -162,34 +162,6 @@ def get_training_query(sc, flows_File, qid):
              # .map(keys=('ipv4_dstIP',))
              )
 
-    elif qid == 11:
-        # UDP traffic asymmetry
-        training_data = (sc.textFile(flows_File)
-                         .map(parse_log_line)
-                         # .map(lambda s: tuple([int(math.ceil(int(s[0]) / T))] + (list(s[1:]))))
-                         .map(lambda s: tuple([1] + (list(s[1:]))))
-                         .filter(lambda (ts, sIP, sPort, dIP, dPort, nBytes, proto, tcp_seq, tcp_ack,
-                                        tcp_flags): str(proto) == '17')
-                         )
-        q1 = (PacketStream(111)
-              .map(keys=('ipv4_dstIP','sPort'))
-              .reduce(keys=('ipv4_dstIP','sPort',), func=('sum',))
-              .filter(filter_vals=('count1',), func=('geq', '99.9'))
-              )
-        q2 = (PacketStream(112)
-              .map(keys=('ipv4_srcIP','dPort'))
-              .reduce(keys=('ipv4_srcIP','dPort',), func=('sum',))
-              .map(keys=('ipv4_srcIP','dPort'), values=('count2',))
-              )
-
-        q = (q1
-             .join(query=q2, new_qid=113)
-             .map(keys=('ipv4_dstIP','sPort'), map_values=('count3'), func=('diff', 1,))
-             .filter(filter_vals=('count3',), func=('geq', '99.9'))
-             )
-
-
-
     q.basic_headers = BASIC_HEADERS
 
     return q, training_data
