@@ -209,11 +209,12 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
     for qid_origin in join_queries:
         qid_pairs = list(itertools.combinations(join_queries[qid_origin], 2))
         for q1, q2 in qid_pairs:
-            for rid in qid_2_R[q1][1:]:
-                if rid in qid_2_R[q1][1:]:
-                    m.addConstr(I[q1][rid] == I[q2][rid])
-                else:
-                    print("This should not happen")
+            if q1 in Q and q2 in Q:
+                for rid in qid_2_R[q1][1:]:
+                    if rid in qid_2_R[q2][1:]:
+                        m.addConstr(I[q1][rid] == I[q2][rid])
+                    else:
+                        print("This should not happen")
 
     # Apply mode-specific changes
     if mode in [1, 2]:
