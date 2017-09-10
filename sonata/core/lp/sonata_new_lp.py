@@ -3,9 +3,11 @@ from __future__ import print_function
 from gurobipy import Model, GRB, GurobiError
 from tabulate import tabulate
 import math
+import itertools
 
 
-def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_max, bits_max, mode=6):
+def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_max, bits_max,
+                    mode=6, join_queries = {}):
     """
     :param Q:
     :param query_2_tables:
@@ -194,6 +196,16 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
 
     m.setObjective(sum(total_packets), GRB.MINIMIZE)
 
+    # Apply join query constraint I_{l,r} = I_{m,r} where queries l and m belong to the same query tree.
+    for qid_origin in join_queries:
+        qid_pairs = list(itertools.combinations(join_queries[qid_origin], 2))
+        for q1, q2 in qid_pairs:
+            for rid in qid_2_R[q1][1:]:
+                if rid in qid_2_R[q1][1:]:
+                    m.addConstr(I[q1][rid] == I[q2][rid])
+                else:
+                    print("This should not happen")
+
     # Apply mode-specific changes
     if mode in [1, 2]:
         # set all d variables to zero, i.e. no stateful operation in the data plane
@@ -219,7 +231,7 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
                 m.addConstr(I[qid][rid] == 1)
 
     m.write(name + ".lp")
-    m.setParam(GRB.Param.OutputFlag, 0)
+    # m.setParam(GRB.Param.OutputFlag, 0)
     # m.setParam(GRB.Param.LogToConsole, 0)
     m.optimize()
 
