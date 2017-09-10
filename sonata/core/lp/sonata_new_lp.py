@@ -129,10 +129,17 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
                 m.addConstr(D[qid][rid][tid1] >= D[qid][rid][tid2])
 
             # inter-query dependency
+            # We need at least difference of two stages not one (one stage is required for
+            # performing indexing/map operation)
             for (tid1, tid2) in zip(query_2_tables[qid][:-1], query_2_tables[qid][1:]):
                 sigma1 = Sigma[qid][rid][tid1]
                 sigma2 = Sigma[qid][rid][tid2]
-                m.addGenConstrIndicator(D[qid][rid][tid2], True, sigma1 + 1 <= sigma2)
+                m.addGenConstrIndicator(D[qid][rid][tid2], True, sigma1 + 2 <= sigma2)
+
+            # Also, the first stateful table cannot start before first two stages
+            tid0 = query_2_tables[qid][0]
+            sigma0 = Sigma[qid][rid][tid0]
+            m.addGenConstrIndicator(D[qid][rid][tid0], True, sigma0 >= 3)
 
             # create a query (qid, rid) specific count for number of out packets
             var_name = "n_" + str(qid) + "_" + str(rid)
