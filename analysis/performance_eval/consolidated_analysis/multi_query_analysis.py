@@ -10,7 +10,8 @@ def multi_query_analysis():
 
     sigma_max = 12
     width_max = 2
-    bits_max = 1 * 1000000
+    bits_max_stage = 2 * 1000000
+    bits_max_register = 1 * 1000000
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
     # ref_levels = [0, 8, 16, 24, 32]
     modes = [2, 3, 4, 6]
@@ -39,8 +40,8 @@ def multi_query_analysis():
             Q = [5]
             print q_n, combo_id, Q
             for mode in modes:
-                m = solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2__r, sigma_max, width_max, bits_max,
-                                    mode, {})
+                m = solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2__r, sigma_max, width_max, bits_max_stage,
+                                    bits_max_register, mode, {})
                 out[q_n][combo_id][mode] = m.objVal
     print out
 

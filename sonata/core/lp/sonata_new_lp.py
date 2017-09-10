@@ -6,8 +6,8 @@ import math
 import itertools
 
 
-def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_max, bits_max,
-                    mode=6, join_queries = {}):
+def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_max, bits_max_stage,
+                    bits_max_register, mode=6, join_queries={}):
     """
     :param Q:
     :param query_2_tables:
@@ -15,8 +15,9 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
     :param qid_2_R:
     :param sigma_max:
     :param width_max:
-    :param bits_max:
+    :param bits_max_stage:
     :param mode:
+    :param join_queries:
     :return:
 
     Mode:
@@ -25,7 +26,7 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
     3: PART-ONLY, i.e. naively execute stateful operations in the data plane w/o any refinement
     4: FIXED-REF, i.e. in addition to naive partitioning, also refine the input query with a one
         refinement plan fits all refinement plan
-    5: Cache:, i.e. N-way LRU cache
+    5: Cache:, i.e. N-way LRU cache // we don't solve any LP for this mode. It is here only for the sake of completeness
     6: Sonata
     """
     name = "sonata"
@@ -187,13 +188,14 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
                 BS[sid][qid][rid] = {}
                 for tid in query_2_tables[qid]:
                     var_name = "bs_" + str(sid) + "_" + str(qid) + "_" + str(rid) + "_" + str(tid)
-                    BS[sid][qid][rid][tid] = m.addVar(lb=0, ub=GRB.INFINITY, vtype=GRB.INTEGER, name=var_name)
+                    # maximum bits that a single register can support
+                    BS[sid][qid][rid][tid] = m.addVar(lb=0, ub=bits_max_register, vtype=GRB.INTEGER, name=var_name)
                     b_over_r = [F[qid][rid][rid_prev] * cost_matrix[qid][(rid_prev, rid)][tid][1] for rid_prev in
                                 F[qid][rid].keys()]
                     m.addGenConstrIndicator(S[qid][rid][tid][sid], True, BS[sid][qid][rid][tid] == sum(b_over_r))
                     m.addGenConstrIndicator(S[qid][rid][tid][sid], False, BS[sid][qid][rid][tid] == 0)
                     All_BS[sid].append(BS[sid][qid][rid][tid])
-        m.addConstr(sum(All_BS[sid]) <= bits_max)
+        m.addConstr(sum(All_BS[sid]) <= bits_max_stage)
 
     # define the objective, i.e. minimize the total number of packets to send to stream processor
     total_packets = []
@@ -376,18 +378,18 @@ def test_lp(test_id=1):
         query_2_tables = {1: [1]}
 
         cost_matrix = {1: {
-                           (0, 8): {1: (1000, 50)},
-                           (0, 16): {1: (1000, 60)},
-                           (0, 24): {1: (1000, 70)},
-                           (0, 32): {1: (1000, 120)},
-                           (8, 16): {1: (700, 50)},
-                           (8, 24): {1: (700, 60)},
-                           (8, 32): {1: (700, 80)},
-                           (16, 24): {1: (500, 40)},
-                           (16, 32): {1: (500, 50)},
-                           (24, 32): {1: (300, 30)}
-                           }
-                       }
+            (0, 8): {1: (1000, 50)},
+            (0, 16): {1: (1000, 60)},
+            (0, 24): {1: (1000, 70)},
+            (0, 32): {1: (1000, 120)},
+            (8, 16): {1: (700, 50)},
+            (8, 24): {1: (700, 60)},
+            (8, 32): {1: (700, 80)},
+            (16, 24): {1: (500, 40)},
+            (16, 32): {1: (500, 50)},
+            (24, 32): {1: (300, 30)}
+        }
+        }
 
         qid_2_R = {1: [0, 8, 16, 24, 32]}
 
