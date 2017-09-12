@@ -135,7 +135,7 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
             for (tid1, tid2) in zip(query_2_tables[qid][:-1], query_2_tables[qid][1:]):
                 sigma1 = Sigma[qid][rid][tid1]
                 sigma2 = Sigma[qid][rid][tid2]
-                m.addGenConstrIndicator(D[qid][rid][tid2], True, sigma1 + 2 <= sigma2)
+                m.addGenConstrIndicator(D[qid][rid][tid2], True, sigma1 + 1 <= sigma2)
 
             # Also, the first stateful table cannot start before first two stages
             tid0 = query_2_tables[qid][0]
@@ -215,6 +215,11 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
                         m.addConstr(I[q1][rid] == I[q2][rid])
                     else:
                         print("This should not happen")
+
+    # if mode == 6:
+    #     for qid in Q:
+    #         tmp = [I[qid][rid] for rid in qid_2_R[qid][1:]]
+    #         m.addConstr(sum(tmp) <= 4)
 
     # Apply mode-specific changes
     if mode in [1, 2]:
