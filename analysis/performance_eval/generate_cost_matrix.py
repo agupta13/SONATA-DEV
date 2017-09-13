@@ -170,17 +170,11 @@ def get_training_query(sc, flows_File, qid):
 
 
 def generate_counts_and_costs():
-    # TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv/part-00000'
-    # TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv'
 
-    TD_PATH = '/mnt/data/caida.1301_transformed'
-
-    baseDir = os.path.join(TD_PATH)
-    flows_File = os.path.join(baseDir, '*.csv')
-    # flows_File = TD_PATH
+    base_dir = "/mnt/data/"
+    minutes = ["1302", "1303", "1304", "1305", "1306"]
 
     qids = [1, 2, 3, 4, 5, 6, 7]
-    qids = [3]
     sc = create_spark_context()
 
     with open('sonata/config.json') as json_data_file:
@@ -192,32 +186,39 @@ def generate_counts_and_costs():
 
     target = Target()
 
-    for qid in qids:
-        # clean the tmp directory before running the experiment
-        clean_cmd = "rm -rf " + TMP_PATH + "*"
-        # print "Running command", clean_cmd
-        os.system(clean_cmd)
+    for minute in minutes:
+        TD_PATH = base_dir+minute+"_transformed/"
+        flows_File = os.path.join(TD_PATH, '*.csv')
+        print "$$$$$$$$$$$$"
+        print "Processing data for minute", minute, "files", flows_File
 
-        # get query and query-specific training data
-        query, training_data = get_training_query(sc, flows_File, qid)
-        refinement_object = Refinement(query, target, refinement_keys, sc)
+        for qid in qids:
+            # clean the tmp directory before running the experiment
+            clean_cmd = "rm -rf " + TMP_PATH + "*"
+            # print "Running command", clean_cmd
+            os.system(clean_cmd)
 
-        # print "Collecting the training data for the first time ...", training_data_fname.take(2)
-        training_data_fname = "training_data"
-        dump_rdd(training_data_fname, training_data)
+            # get query and query-specific training data
+            query, training_data = get_training_query(sc, flows_File, qid)
+            refinement_object = Refinement(query, target, refinement_keys, sc)
 
-        # training_data_fname = sc.parallelize(training_data_fname.collect())
-        print "Collecting timestamps for the experiment ..."
-        timestamps = load_rdd(training_data_fname, sc).map(lambda s: s[0]).distinct().collect()
-        print "#Timestamps: ", len(timestamps)
+            # print "Collecting the training data for the first time ...", training_data_fname.take(2)
+            training_data_fname = "training_data"
+            dump_rdd(training_data_fname, training_data)
 
-        refinement_object.update_filter(training_data_fname)
+            # training_data_fname = sc.parallelize(training_data_fname.collect())
+            print "Collecting timestamps for the experiment ..."
+            timestamps = load_rdd(training_data_fname, sc).map(lambda s: s[0]).distinct().collect()
+            print "#Timestamps: ", len(timestamps)
 
-        hypothesis = Hypothesis(query, sc, training_data_fname, timestamps, refinement_object, target)
+            refinement_object.update_filter(training_data_fname)
 
-        tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))
-        count_fname = 'data/query_counts_transit_' + str(hypothesis.query.qid) + '_' + tmp + '.pickle'
-        dump_data(hypothesis.counts.query_out_transit, count_fname)
+            hypothesis = Hypothesis(query, sc, training_data_fname, timestamps, refinement_object, target)
+
+            tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))
+            count_fname = 'data/query_counts_transit_' + str(hypothesis.query.qid) + '_' + tmp + '_'+str(minute)+'.pickle'
+            print "Dumping counts data ...", count_fname
+            dump_data(hypothesis.counts.query_out_transit, count_fname)
 
 
 if __name__ == '__main__':
