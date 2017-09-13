@@ -160,7 +160,7 @@ def get_training_query(sc, flows_File, qid):
              .distinct(keys=('ipv4_dstIP', 'ipv4_srcIP'))
              .map(keys=('ipv4_dstIP',), map_values=('count',), func=('eq', 1,))
              .reduce(keys=('ipv4_dstIP',), func=('sum',))
-             .filter(filter_vals=('count',), func=('geq', '99.9'))
+             .filter(filter_vals=('count',), func=('geq', '99.99'))
              # .map(keys=('ipv4_dstIP',))
              )
 
