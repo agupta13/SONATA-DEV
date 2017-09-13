@@ -16,6 +16,8 @@ class Hypothesis(object):
     """
     E = {}
     G = {}
+    counts = None
+    costs = None
 
     def __init__(self, query, sc, training_data_fname, timestamps, refinement_object, target):
         self.sc = sc
@@ -76,51 +78,54 @@ class Hypothesis(object):
                 costs = pickle.load(f)
         else:
             # Run the query over training data to get various counts
-            counts = Counts(self.query, self.sc, self.training_data_fname, self.timestamps, self.refinement_object, self.target)
-            # Apply the costs model over counts to estimate costs for different edges
-            costs = Costs(counts, self.P).costs
-            import time
-            import datetime
-            tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))
-            cost_fname = 'data/query_cost_transit_' + str(self.query.qid) + '_' + tmp + '.pickle'
+            counts = Counts(self.query, self.sc, self.training_data_fname, self.timestamps, self.refinement_object,
+                            self.target)
+            self.counts = counts
 
-            with open(cost_fname, 'w') as f:
-                print "Dumping costs into pickle", cost_fname, "..."
-                pickle.dump(costs, f)
+            # # Apply the costs model over counts to estimate costs for different edges
+            # costs = Costs(counts, self.P).costs
+            # import time
+            # import datetime
+            # tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))
+            # cost_fname = 'data/query_cost_transit_' + str(self.query.qid) + '_' + tmp + '.pickle'
+            #
+            # with open(cost_fname, 'w') as f:
+            #     print "Dumping costs into pickle", cost_fname, "..."
+            #     pickle.dump(costs, f)
 
-        E = {}
-        print "Vertices", self.V
-        for (r1, p1, l1) in self.V:
-            for (r2, p2, l2) in self.V:
-                if r1 < r2 and l2 == l1 + 1:
-                    edge = ((r1, p1, l1), (r2, p2, l2))
-
-                    # initialize edges for all timestamps
-                    for ts in self.timestamps:
-                        if ts not in E:
-                            E[ts] = {}
-                        E[ts][edge] = 0
-
-                    # for timestamps for which we have cost data, we will update the edge values
-                    # this ensures that we graphs for every timestamp.
-                    transit = (r1, r2)
-                    partition_plan = p2
-                    qid = self.query.qid
-                    # print qid, transit, partition_plan
-                    if partition_plan in costs[qid][transit]:
-                        for (ts, (b, n)) in costs[qid][transit][partition_plan]:
-                            E[ts][edge] = (self.alpha * n + (1 - self.alpha) * b)
-
-        # Add edges for the final refinement level and the final target (T) node
-        for (r, p, l) in self.V:
-            if r == self.refinement_levels[-1] and p != -1:
-                edge = ((r, p, l), (r, 0, 0))
-                for ts in self.timestamps:
-                    if ts not in E:
-                        E[ts] = {}
-                    E[ts][edge] = 0
-
-        self.E = E
+        # E = {}
+        # print "Vertices", self.V
+        # for (r1, p1, l1) in self.V:
+        #     for (r2, p2, l2) in self.V:
+        #         if r1 < r2 and l2 == l1 + 1:
+        #             edge = ((r1, p1, l1), (r2, p2, l2))
+        #
+        #             # initialize edges for all timestamps
+        #             for ts in self.timestamps:
+        #                 if ts not in E:
+        #                     E[ts] = {}
+        #                 E[ts][edge] = 0
+        #
+        #             # for timestamps for which we have cost data, we will update the edge values
+        #             # this ensures that we graphs for every timestamp.
+        #             transit = (r1, r2)
+        #             partition_plan = p2
+        #             qid = self.query.qid
+        #             # print qid, transit, partition_plan
+        #             if partition_plan in costs[qid][transit]:
+        #                 for (ts, (b, n)) in costs[qid][transit][partition_plan]:
+        #                     E[ts][edge] = (self.alpha * n + (1 - self.alpha) * b)
+        #
+        # # Add edges for the final refinement level and the final target (T) node
+        # for (r, p, l) in self.V:
+        #     if r == self.refinement_levels[-1] and p != -1:
+        #         edge = ((r, p, l), (r, 0, 0))
+        #         for ts in self.timestamps:
+        #             if ts not in E:
+        #                 E[ts] = {}
+        #             E[ts][edge] = 0
+        #
+        # self.E = E
 
     def update_graphs(self):
         G = {}

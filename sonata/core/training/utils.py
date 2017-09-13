@@ -226,7 +226,6 @@ def generate_query_string_prev_level_out_mapped(qid, ref_level_prev, query_out_r
 
     print "prev_level_out_mapped_string", prev_level_out_mapped_string, "prev_level", ref_level_prev
 
-
     return prev_level_out_mapped_string, prev_level_out_fname
 
 

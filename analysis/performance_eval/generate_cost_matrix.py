@@ -16,6 +16,8 @@ from sonata.core.refinement import get_refined_query_id, Refinement
 from sonata.core.training.hypothesis.hypothesis import Hypothesis
 from sonata.system_config import BASIC_HEADERS
 from sonata.core.utils import dump_rdd, load_rdd, TMP_PATH, parse_log_line
+from sonata.core.training.utils import *
+from sonata.core.utils import *
 
 """
 Schema:
@@ -212,6 +214,10 @@ def generate_counts_and_costs():
         refinement_object.update_filter(training_data_fname)
 
         hypothesis = Hypothesis(query, sc, training_data_fname, timestamps, refinement_object, target)
+
+        tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))
+        count_fname = 'data/query_counts_transit_' + str(hypothesis.query.qid) + '_' + tmp + '.pickle'
+        dump_data(hypothesis.counts.query_out_transit, count_fname)
 
 
 if __name__ == '__main__':

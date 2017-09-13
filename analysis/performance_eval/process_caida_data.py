@@ -7,6 +7,8 @@ import time
 import datetime
 import math
 import json
+import glob
+import os
 
 from sonata.query_engine.sonata_queries import *
 from sonata.core.training.utils import create_spark_context
@@ -57,25 +59,23 @@ def reduce_size(sc, fname, out_fname):
     lines.saveAsTextFile(out_fname)
 
 
-if __name__ == '__main__':
-    in_dir = "/mnt/caida_20160121080147/"
-    out_dir = "/mnt/caida_20160121080147_transformed/"
+def transform_input_data():
+    base_dir = "/mnt/data/"
+    minutes = ["1301", "1302", "1303", "1304", "1305", "1306"]
     sc = create_spark_context()
+    for minute in minutes:
+        in_dir_name = base_dir+minute+"/"
+        out_dir_name = base_dir+minute+"_transformed/"
+        fnames = os.listdir(in_dir_name)
+        for fname in fnames:
+            if ".csv" in fname:
+                full_fname_in = in_dir_name+fname
+                full_fname_out = out_dir_name+fname
+                print "Transforming file", full_fname_in, "to", full_fname_out
+                reduce_size(sc, full_fname_in, full_fname_out)
 
-    fnames = ['dirAB.out_00000_20160121080100.pcap.csv',
-              'dirAB.out_00006_20160121080136.pcap.csv',
-              'dirAB.out_00001_20160121080105.pcap.csv',
-              'dirAB.out_00007_20160121080142.pcap.csv',
-              'dirAB.out_00002_20160121080110.pcap.csv',
-              'dirAB.out_00008_20160121080147.pcap.csv',
-              'dirAB.out_00003_20160121080116.pcap.csv',
-              'dirAB.out_00009_20160121080153.pcap.csv',
-              'dirAB.out_00004_20160121080121.pcap.csv',
-              'dirAB.out_00010_20160121080158.pcap.csv'
-              ]
 
-    for fname in fnames:
-        in_fname = in_dir+fname
-        out_fname = out_dir+fname
-        print "Transforming file", fname
-        reduce_size(sc, in_fname, out_fname)
+if __name__ == '__main__':
+    transform_input_data()
+
+
