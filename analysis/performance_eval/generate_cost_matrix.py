@@ -110,7 +110,7 @@ def get_training_query(sc, flows_File, qid):
              .map(keys=('ipv4_dstIP', 'ipv4_srcIP', 'nBytes'))
              .map(keys=('ipv4_dstIP', 'ipv4_srcIP'), values=('nBytes',))
              .reduce(keys=('ipv4_dstIP', 'ipv4_srcIP',), func=('sum',))
-             .filter(filter_vals=('nBytes',), func=('geq', '99.9'))
+             .filter(filter_vals=('nBytes',), func=('geq', '99.99'))
              )
 
     elif qid == 5:
@@ -171,13 +171,14 @@ def generate_counts_and_costs():
     # TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv/part-00000'
     # TD_PATH = '/mnt/dirAB.out_00000_20160121080100.transformed.csv'
 
-    TD_PATH = '/mnt/caida_20160121080147_transformed'
+    TD_PATH = '/mnt/data/caida.1301_transformed'
 
     baseDir = os.path.join(TD_PATH)
     flows_File = os.path.join(baseDir, '*.csv')
     # flows_File = TD_PATH
 
     qids = [1, 2, 3, 4, 5, 6, 7]
+    qids = [3]
     sc = create_spark_context()
 
     with open('sonata/config.json') as json_data_file:
