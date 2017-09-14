@@ -175,6 +175,7 @@ def generate_counts_and_costs():
     minutes = ["1302", "1303", "1304", "1305", "1306"]
 
     qids = [1, 2, 3, 4, 5, 6, 7]
+    qids = [3]
     sc = create_spark_context()
 
     with open('sonata/config.json') as json_data_file:

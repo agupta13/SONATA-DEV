@@ -36,7 +36,7 @@ class Hypothesis(object):
         self.get_iteration_levels()
         self.get_vertices()
         self.add_edges()
-        self.update_graphs()
+        # self.update_graphs()
 
     def get_refinement_levels(self):
         self.R = self.refinement_object.ref_levels[1:]

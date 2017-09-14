@@ -35,10 +35,10 @@ def analyse_query(fname):
     Schema:
     ts,sIP,sPort,dIP,dPort,nBytes,proto,tcp.seq,tcp.ack,tcp.flags
     """
-
+    vulernabe_ports = ['53', '123', '19', '161', '162', '137', '138', '139', '17']
     n_resp = (packets
                   .filter(lambda s: str(s[-4]) == '17')
-                  # .filter(lambda s: str(s[2]) == '53')
+                  .filter(lambda s: str(s[2]) in vulernabe_ports)
                   .map(lambda s: (s[3], s[1], s[2]))
                   .distinct()
                   .map(lambda s: ((s[0], s[2]), 1))
@@ -50,7 +50,7 @@ def analyse_query(fname):
 
     n_req = (packets
              .filter(lambda s: str(s[-4]) == '17')
-             # .filter(lambda s: str(s[4]) == '53')
+             .filter(lambda s: str(s[4]) in vulernabe_ports)
              .map(lambda s: (s[1], s[3], s[4]))
              .distinct()
              .map(lambda s: ((s[0], s[2]), 1))
