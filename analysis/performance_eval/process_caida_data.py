@@ -63,7 +63,7 @@ def reduce_size(sc, fname, out_fname):
 def transform_input_data():
     base_dir = "/mnt/data/"
     minutes = ["1301", "1302", "1303", "1304", "1305", "1306"]
-    minutes = ["1301"]
+    # minutes = ["1301"]
     sc = create_spark_context()
     for minute in minutes:
         in_dir_name = base_dir+minute+"/"
