@@ -27,10 +27,9 @@ def analyse_query(fname):
     #            .map(lambda s: tuple([1] + (list(s[1:]))))
     #            )
 
-    training_data_fname = "/mnt/tmp/training_data"
+    training_data_fname = "training_data"
     out = (load_rdd(training_data_fname, sc)
-           .map(lambda ((ts,ipv4_srcIP,sPort,ipv4_dstIP,dPort,nBytes,proto,tcp_seq,tcp_ack,tcp_flags)): ((ipv4_dstIP,
-                                                                                                          str(IPNetwork(str(str(ipv4_srcIP)+"/32")).network),ts)))
+           .map(lambda ((ts,ipv4_srcIP,sPort,ipv4_dstIP,dPort,nBytes,proto,tcp_seq,tcp_ack,tcp_flags)): ((ipv4_dstIP,str(IPNetwork(str(str(ipv4_srcIP)+"/32")).network),ts)))
            .map(lambda ((ipv4_dstIP,ipv4_srcIP,ts)): ((ts,ipv4_dstIP,ipv4_srcIP)))
            .distinct().map(lambda ((ts,ipv4_dstIP,ipv4_srcIP)): ((ts,ipv4_srcIP),(1)))
            .reduceByKey(lambda x,y: x+y).map(lambda s: s[1]).collect())

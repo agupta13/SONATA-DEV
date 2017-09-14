@@ -47,6 +47,7 @@ def reduce_size(sc, fname, out_fname):
     # print transformed_data.take(5)
 
     transformed_data = (transformed_data
+                        .filter(lambda s: s[0] != 'ts')
                         .map(lambda s: tuple([str(s[0]).split(".")[0]]+list(s[1:7]) + list(s[9:11]) + get_tcp_flag(s[11])))
                         )
     # print transformed_data.take(5)
@@ -61,7 +62,8 @@ def reduce_size(sc, fname, out_fname):
 
 def transform_input_data():
     base_dir = "/mnt/data/"
-    minutes = ["1302", "1303", "1304", "1305", "1306"]
+    minutes = ["1301", "1302", "1303", "1304", "1305", "1306"]
+    minutes = ["1301"]
     sc = create_spark_context()
     for minute in minutes:
         in_dir_name = base_dir+minute+"/"
