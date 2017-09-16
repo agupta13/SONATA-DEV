@@ -63,8 +63,8 @@ queries_2_operator = {
 
 
 origin_qid_2_qids = {
-    1:[1], 2:[2], 3:[3], 4:[4], 5:[5], 6:[6], 7:[7],
-    9 : [91, 92, 93],
+    1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [6], 7: [7],
+    9: [91, 92, 93],
     10: [101, 102],
     11: [111, 112],
     12: [121, 122]
@@ -72,27 +72,33 @@ origin_qid_2_qids = {
 
 
 def generate_cost_matrix_from_counts():
-    counts_path = "data/all_data/*.pickle"
+    # counts_path = "data/all_data/*.pickle"
+    counts_path = "data/multi_minute_data/*.pickle"
     cost_matrix = {}
     for fname in glob.iglob(counts_path):
         qid_origin = int(fname.split("transit_")[1].split("_")[0])
+        minute = int(fname.split(".pickle")[0].split("_")[-1])
+        if minute not in cost_matrix:
+            cost_matrix[minute] = {}
+
         print qid_origin
         if qid_origin in origin_qid_2_qids:
             with open(fname) as f:
                 counts = pickle.load(f)
                 qids = origin_qid_2_qids[qid_origin]
                 for qid in qids:
-                    cost_matrix[qid] = {}
+                    if qid not in cost_matrix[minute]:
+                        cost_matrix[minute][qid] = {}
                     for transit in counts[qid]:
                         # print qid, transit, counts[qid][transit]
-                        cost_matrix[qid][transit] = {}
+                        cost_matrix[minute][qid][transit] = {}
                         tids = counts[qid][transit].keys()
                         tids.sort()
                         for (tid1, tid2) in zip(tids[:-1], tids[1:]):
                             if len(counts[qid][transit][tid1]) == 0:
                                 # case where cost_matrix[qid][transit] is like {0: [], 2: []}
                                 for tid in tids[1:]:
-                                    cost_matrix[qid][transit][tid % 1000] = (0, 0, 0)
+                                    cost_matrix[minute][qid][transit][tid % 1000] = (0, 0, 0)
 
                             else:
                                 n_packets_in = counts[qid][transit][tid1][0][1]
@@ -114,9 +120,10 @@ def generate_cost_matrix_from_counts():
                                         if tid3 == tid2:
                                             break
                                     print qid, transit, tid2 % 1000, (n_packets_in, n_bits, n_packets_out)
-                                    cost_matrix[qid][transit][tid2 % 1000] = (n_packets_in, n_bits, n_packets_out)
-    print cost_matrix.keys()
-    out_fname = "data/sept_5_experiment_data_cost_matrix.pickle"
+                                    cost_matrix[minute][qid][transit][tid2 % 1000] = (n_packets_in, n_bits, n_packets_out)
+
+    print cost_matrix[1301][1][(20,28)], cost_matrix[1302][1][(20,28)], cost_matrix[1303][1][(20,28)]
+    out_fname = "data/sept_16_experiment_data_cost_matrix.pickle"
     with open(out_fname, 'w') as f:
         print "Dumping data to file", out_fname, " ... "
         pickle.dump(cost_matrix, f)
