@@ -54,9 +54,7 @@ class Counts(object):
             self.query_cost_transit_fname = 'data/query_counts_transit_' + str(qid) + '_' + tmp + '.pickle'
             self.get_transit_query_output(qid)
 
-            dump_data(self.query_out_transit, self.query_cost_transit_fname)
-            # with open(self.query_cost_transit_fname, 'r') as f:
-            #     self.query_out_transit = pickle.load(f)
+            # dump_data(self.query_out_transit, self.query_cost_transit_fname)
 
     def get_transit_query_output(self, qid):
         """

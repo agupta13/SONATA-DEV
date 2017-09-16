@@ -33,21 +33,26 @@ def generate_counts(data_fname):
 
     sc = create_spark_context()
 
-    for qid in qids:
-        # clean the tmp directory before running the experiment
-        clean_cmd = "rm -rf " + TMP_PATH + "*"
-        # print "Running command", clean_cmd
-        os.system(clean_cmd)
+    base_dir = "/mnt/data/"
+    minutes = ["1301", "1302", "1303", "1304", "1305", "1306"]
 
-        print "## Getting costs for query", qid
+    for minute in minutes:
 
-        tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))
-        cost_fname = 'data/query_cost_transit_' + str(qid) + '_' + tmp + '.pickle'
-        query_count_transit = qid_2_modules[qid].analyse_query(data_fname, sc)
+        for qid in qids:
+            # clean the tmp directory before running the experiment
+            clean_cmd = "rm -rf " + TMP_PATH + "*"
+            # print "Running command", clean_cmd
+            os.system(clean_cmd)
 
-        with open(cost_fname, 'w') as f:
-            print "Dumping costs into pickle", cost_fname, "..."
-            pickle.dump(query_count_transit, f)
+            print "## Getting costs for query", qid
+
+            tmp = "-".join(str(datetime.datetime.fromtimestamp(time.time())).split(" "))+"_"+str(minute)
+            cost_fname = 'data/query_cost_transit_' + str(qid) + '_' + tmp + '.pickle'
+            query_count_transit = qid_2_modules[qid].analyse_query(data_fname, sc)
+
+            with open(cost_fname, 'w') as f:
+                print "Dumping costs into pickle", cost_fname, "..."
+                pickle.dump(query_count_transit, f)
 
 
 if __name__ == '__main__':

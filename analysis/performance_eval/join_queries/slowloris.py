@@ -100,7 +100,7 @@ def analyse_query(fname, sc):
     prev_qids = {121: 123, 122: 123, 123: 123}
     spark_queries = {}
     query_out = {}
-    query_2_percentile_thresh = {121: 99.9, 123: 99.9}
+    query_2_percentile_thresh = {121: 99.99, 123: 99.99}
     query_2_actual_thresh = {}
     refinement_levels.sort(reverse=True)
 
