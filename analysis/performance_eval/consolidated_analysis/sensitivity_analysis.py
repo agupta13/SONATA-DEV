@@ -93,6 +93,7 @@ def vary_W():
     #     pickle.dump(out, f)
 
     print out
+    
 
 def vary_B():
     fname = "data/aug_21_experiment_data_cost_matrix.pickle"

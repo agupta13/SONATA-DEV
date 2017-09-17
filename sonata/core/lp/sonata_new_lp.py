@@ -288,7 +288,7 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
     print(refinement_levels)
     print("==========================")
 
-    return m
+    return m, refinement_levels
 
 
 def test_lp(test_id=1):

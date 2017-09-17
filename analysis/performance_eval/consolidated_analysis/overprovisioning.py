@@ -6,10 +6,6 @@ import numpy as np
 
 def get_delta_distribution():
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
-    width_max = 2
-    bits_max_stage = 8 * 1000000
-    bits_max_register = 4 * 1000000
-    ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
     join_queries = {1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [6], 7: [7]}
     with open(fname, 'r') as f:
         counts = pickle.load(f)
