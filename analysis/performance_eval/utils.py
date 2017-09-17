@@ -5,11 +5,13 @@ def prune_refinement_levels(fname, ref_levels):
     out_cost_matrix = {}
     with open(fname, 'r') as f:
         in_cost_matrix = pickle.load(f)
-        for qid in in_cost_matrix:
-            out_cost_matrix[qid] = {}
-            for (r1, r2) in in_cost_matrix[qid]:
-                if r1 in ref_levels and r2 in ref_levels:
-                    out_cost_matrix[qid][(r1, r2)] = in_cost_matrix[qid][(r1, r2)]
+        for minute in in_cost_matrix:
+            out_cost_matrix[minute] = {}
+            for qid in in_cost_matrix[minute]:
+                out_cost_matrix[minute][qid] = {}
+                for (r1, r2) in in_cost_matrix[minute][qid]:
+                    if r1 in ref_levels and r2 in ref_levels:
+                        out_cost_matrix[minute][qid][(r1, r2)] = in_cost_matrix[minute][qid][(r1, r2)]
 
     return out_cost_matrix
 
