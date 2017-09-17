@@ -26,7 +26,7 @@ def get_delta_distribution():
                         rprev_2_delta[qid][r_prev] = []
                     delta[qid][transit] = {}
                     for tid in counts[minutes[0]][qid][transit]:
-                        tmp = [counts[x][qid][transit][tid][1] for x in minutes]
+                        tmp = [counts[x][qid][transit][tid][1] for x in minutes[:4]]
                         tmp = [x for x in tmp if x > 0]
                         tmp_delta = (100.0 * (max(tmp) - min(tmp))) / min(tmp)
                         tmp_delta = np.std([float(x) / max(tmp) for x in tmp])
@@ -98,7 +98,7 @@ def vary_DeltaB():
                 for origin_qid in origin_qids:
                     Q += join_queries[origin_qid]
 
-                m = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
+                m, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
                                     sigma_max, width_max, bits_max_stage, bits_max_register, mode,
                                     join_queries)
                 out[minute][mode][deltaX] = m.objVal

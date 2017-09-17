@@ -93,7 +93,7 @@ def vary_W():
     #     pickle.dump(out, f)
 
     print out
-    
+
 
 def vary_B():
     fname = "data/aug_21_experiment_data_cost_matrix.pickle"
@@ -145,8 +145,63 @@ def vary_B():
     print out
 
 
+def vary_R():
+    fname = "data/sept_5_experiment_data_cost_matrix.pickle"
+    fname = "data/sept_16_experiment_data_cost_matrix.pickle"
+
+    sigma_max = 12
+    width_max = 2
+    bits_max_stage = 8 * 1000000
+    bits_max_register = 4 * 1000000
+    ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
+
+    with open(fname, 'r') as f:
+        counts = pickle.load(f)
+        minutes = counts.keys()
+        minutes.sort()
+        print minutes
+
+    cost_matrix = prune_refinement_levels(fname, ref_levels)
+
+    modes = [6]
+
+    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102], 11: [111, 112],
+                    12: [121, 122]}
+
+    # We need to fix queries 1, 4, & 11
+    Q = []
+    origin_qids = [5, 9, 7, 12, 6, 2, 10, 3]
+    for origin_qid in origin_qids:
+        Q += join_queries[origin_qid]
+    out = {}
+    Rs = [[0, 4, 8, 12, 16, 20, 24, 28, 32], [0, 8, 16, 24, 32], [0, 16, 32], [0, 32]]
+
+    for R in Rs:
+        cost_matrix = prune_refinement_levels(fname, R)
+        rBits = len(R)-1
+        out[rBits] = {}
+        print "***************"
+        print Q
+        for mode in modes:
+            out[rBits][mode] = []
+            for minute in minutes:
+                cost_matrix_tmp = cost_matrix[minute]
+                _, query_2_tables, qid_2__r = get_lp_input(cost_matrix_tmp, R)
+                m, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
+                                       sigma_max, width_max, bits_max_stage, bits_max_register,
+                                       mode, join_queries)
+                tmp = m.objVal
+
+                out[rBits][mode].append(tmp)
+                break
+                # break
+                # break
+
+    print out
+
 
 if __name__ == '__main__':
     # vary_D()
     # vary_W()
-    vary_B()
+    # vary_B()
+    vary_R()
