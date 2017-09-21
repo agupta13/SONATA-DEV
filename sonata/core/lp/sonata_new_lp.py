@@ -7,7 +7,7 @@ import itertools
 
 
 def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_max, bits_max_stage,
-                    bits_max_register, mode=6, join_queries={}):
+                    bits_max_register, mode=6, join_queries={}, M_max = 4096):
     """
     :param Q:
     :param query_2_tables:
@@ -39,6 +39,8 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
     F = {}
     query_2_n = {}
     Sigma = {}
+    M = {}
+    ML = {}
 
     var_name = "sigma"
     dp_sigma = m.addVar(lb=0, ub=sigma_max, vtype=GRB.INTEGER, name=var_name)
@@ -52,10 +54,23 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
         F[qid] = {}
         Sigma[qid] = {}
         query_2_n[qid] = {}
+        M[qid] = {}
+        ML[qid] = {}
         for rid in qid_2_R[qid][1:]:
             # create indicator variable for refinement level rid for query qid
             var_name = "i_" + str(qid) + "_" + str(rid)
             I[qid][rid] = m.addVar(lb=0, ub=1, vtype=GRB.BINARY, name=var_name)
+
+            # create indicator variable for metadata for refinement level rid for query qid
+            # Metadata (index, refinement key, report fields) will be only added to the packet
+            # when any stateful operator is executed in the data plane
+            # qid is added by default for all queries
+            var_name = "M_" + str(qid) + "_" + str(rid)
+            M[qid][rid] = m.addVar(lb=0, ub=1, vtype=GRB.BINARY, name=var_name)
+            # m.addConstr(M[qid][rid] >= I[qid][rid])
+
+            var_name = "ML_" + str(qid) + "_" + str(rid)
+            ML[qid][rid] = m.addVar(lb=0, ub=1, vtype=GRB.BINARY, name=var_name)
 
             if rid == qid_2_R[qid][1:][-1]:
                 m.addConstr(I[qid][rid] == 1)
@@ -157,12 +172,20 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
             tmp_ind = m.addVar(lb=0, ub=1, vtype=GRB.BINARY, name=var_name)
             m.addConstr(tmp_ind == 1 - sum([Last[qid][rid][tid] for tid in query_2_tables[qid]]))
 
+            # # relate M and Last
+            # m.addGenConstrIndicator(tmp_ind, False, ML[qid][rid] >= 1)
+            # m.addGenConstrIndicator(tmp_ind, True, ML[qid][rid] <= 0)
+            m.addConstr(ML[qid][rid] >= sum([Last[qid][rid][tid] for tid in query_2_tables[qid]]))
+
             var_name = "qrn_" + str(qid) + "_" + str(rid)
             qrn = m.addVar(lb=0, ub=GRB.INFINITY, vtype=GRB.INTEGER, name=var_name)
             m.addGenConstrIndicator(tmp_ind, True, qrn >= sum(n_over_qr_no_dp))
             m.addGenConstrIndicator(tmp_ind, False, qrn >= sum(n_over_query))
 
             m.addGenConstrIndicator(I[qid][rid], True, query_2_n[qid][rid] >= qrn)
+            m.addGenConstrIndicator(I[qid][rid], True, M[qid][rid] >= 1)
+            m.addGenConstrIndicator(I[qid][rid], False, M[qid][rid] <= 0)
+            # m.addConstr(ML[qid][rid] >= M[qid][rid])
 
             # sum of all Last variables is 1 for each (qid, rid)
             l_over_query = [Last[qid][rid][tid] for tid in query_2_tables[qid]]
@@ -204,6 +227,15 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
             total_packets.append(query_2_n[qid][rid])
 
     m.setObjective(sum(total_packets), GRB.MINIMIZE)
+
+    # Apply the metadata constraint sum_{q} sum_{r} I[q][r] <= M
+    tmp_metadata = []
+    for qid in Q:
+        for rid in qid_2_R[qid][1:]:
+            # 64 bit if the executed in data plane, else add 16 bit query identifier
+            tmp_metadata.append(16*M[qid][rid]+48*ML[qid][rid])
+
+    m.addConstr(sum(tmp_metadata) <= M_max)
 
     # Apply join query constraint I_{l,r} = I_{m,r} where queries l and m belong to the same query tree.
     for qid_origin in join_queries:
@@ -282,13 +314,27 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
                     out_table[row_id].append(0)
             row_id += 1
 
+    meta_size = 0
+    for qid in M:
+        for rid in M[qid]:
+            print(qid, rid, M[qid][rid].x, ML[qid][rid].x, [Last[qid][rid][tid].x for tid in query_2_tables[qid]])
+            if M[qid][rid].x > 0.5:
+                meta_size += 16
+            if ML[qid][rid].x > 0.5:
+                meta_size += 48
+
+
+    print("Metadata Size:", meta_size)
+
+
+
     print("## Mode", mode)
     print("N(Tuples)", m.objVal)
     print(tabulate(out_table, headers=table_headers))
     print(refinement_levels)
     print("==========================")
 
-    return m, refinement_levels
+    return m, refinement_levels, Last
 
 
 def test_lp(test_id=1):

@@ -48,18 +48,22 @@ def get_spark_query(packets_fname, qid, ref_level, part, Th=[]):
             out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[1])+"/%s")).network)), int(s[5]))).reduceByKey(lambda x, y: x + y))' % (
                 str(ref_level))
     elif qid == 121:
+        # all packets input for this query
         if part == 0:
             out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), 1)))' % (
                 str(ref_level))
 
         elif part == 2:
+            # output of query after applying distinct operation
             out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), 1))' \
                   '.distinct())' % (str(ref_level))
 
+        # output of query after applying reduce operator
         elif part == 4:
             out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), 1))' \
                   '.distinct().map(lambda s: ((s[0][0], s[0][1]), 1)).reduceByKey(lambda x, y: x + y))' % (str(ref_level))
 
+        # output of query after applying filter
         elif part == 5:
             out = '(load_rdd(packets_fname, sc).map(lambda s: ((s[0], str(IPNetwork(str(str(s[3])+"/%s")).network), s[1], s[2]), 1))' \
                   '.distinct().map(lambda s: ((s[0][0], s[0][1]), 1)).reduceByKey(lambda x, y: x + y).filter(lambda s: s[1] >= %d))' % (str(ref_level), Th[0])

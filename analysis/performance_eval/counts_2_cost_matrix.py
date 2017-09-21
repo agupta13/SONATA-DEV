@@ -20,6 +20,7 @@ queries_2_operator = {
     121: {2: 'Distinct', 4: 'Reduce', 5: 'Filter'}, 122: {2: 'Reduce'}, 123: {2: 'Reduce'}
 }
 
+
 origin_qid_2_qids = {
     1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [6], 7: [7],
     9: [91, 92, 93, 94],

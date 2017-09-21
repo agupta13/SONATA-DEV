@@ -6,7 +6,7 @@ import numpy as np
 
 def get_delta_distribution():
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
-    join_queries = {1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [6], 7: [7]}
+    join_queries = {1: [1], 2: [2], 5: [5], 6: [6], 7: [7]}
     with open(fname, 'r') as f:
         counts = pickle.load(f)
         minutes = counts.keys()
@@ -19,24 +19,31 @@ def get_delta_distribution():
         for origin_qid in join_queries:
             for qid in join_queries[origin_qid]:
                 delta[qid] = {}
-                rprev_2_delta[qid] = {}
                 for transit in counts[minutes[0]][qid]:
                     r_prev = transit[0]
-                    if r_prev not in rprev_2_delta[qid]:
-                        rprev_2_delta[qid][r_prev] = []
+                    if r_prev not in rprev_2_delta:
+                        rprev_2_delta[r_prev] = []
                     delta[qid][transit] = {}
                     for tid in counts[minutes[0]][qid][transit]:
                         tmp = [counts[x][qid][transit][tid][1] for x in minutes[:4]]
                         tmp = [x for x in tmp if x > 0]
                         tmp_delta = (100.0 * (max(tmp) - min(tmp))) / min(tmp)
-                        tmp_delta = np.std([float(x) / max(tmp) for x in tmp])
+                        normalized = [float(x) / max(tmp) for x in tmp]
+                        zero_mean = [x-np.median(normalized) for x in normalized]
+                        print tmp
+                        if max(tmp) > min(tmp):
+                            rescaling = [(float(x)-min(tmp)) / (max(tmp)-min(tmp)) for x in tmp]
+                        else:
+                            rescaling = [0 for x in tmp]
+                        tmp_delta = np.std(tmp)
+                        # tmp_delta = np.std(rescaling)
                         print qid, transit, tid, tmp, tmp_delta
                         delta[qid][transit][tid] = tmp_delta
-                        rprev_2_delta[qid][r_prev].append(tmp_delta)
+                        rprev_2_delta[r_prev].append(tmp_delta)
                         cdf_out.append(tmp_delta)
-                print max(rprev_2_delta[qid])
+        print [(x, np.mean(rprev_2_delta[x])) for x in rprev_2_delta.keys()]
         print cdf_out
-        print len(cdf_out), max(cdf_out), min(cdf_out)
+        print len(cdf_out), max(cdf_out), min(cdf_out), np.median(cdf_out)
 
 
 def inflate_cost_matrix(in_cost_matrix, deltaX):
@@ -114,5 +121,5 @@ def vary_DeltaB():
     print out
 
 
-# get_delta_distribution()
-vary_DeltaB()
+get_delta_distribution()
+# vary_DeltaB()
