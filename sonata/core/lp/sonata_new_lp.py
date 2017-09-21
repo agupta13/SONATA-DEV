@@ -317,7 +317,7 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
     meta_size = 0
     for qid in M:
         for rid in M[qid]:
-            print(qid, rid, M[qid][rid].x, ML[qid][rid].x, [Last[qid][rid][tid].x for tid in query_2_tables[qid]])
+            # print(qid, rid, M[qid][rid].x, ML[qid][rid].x, [Last[qid][rid][tid].x for tid in query_2_tables[qid]])
             if M[qid][rid].x > 0.5:
                 meta_size += 16
             if ML[qid][rid].x > 0.5:

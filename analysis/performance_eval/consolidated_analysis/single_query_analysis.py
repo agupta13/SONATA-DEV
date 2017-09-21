@@ -9,27 +9,30 @@ def single_query_analysis():
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
 
     sigma_max = 12
-    width_max = 1
+    width_max = 4
     bits_max_stage = 8 * 1000000
     bits_max_register = 0.75 * bits_max_stage
+    M = 2048
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
     modes = [2, 3, 4, 6]
-    modes = [6]
-    join_queries = {2: [2],
-                    3: [3],
-                    5: [5],
-                    6: [6],
-                    7: [7],
-                    9: [91, 92, 93],
-                    10: [101, 102],
+    # modes = [4, 6]
+    join_queries = {
+                    # 2: [2],
+                    # 3: [3],
+                    # 5: [5],
+                    # 6: [6],
+                    # 7: [7],
+                    # 9: [91, 92, 93],
+                    # 10: [101, 102],
                     11: [111, 112],
-                    12: [121, 122]
+                    # 12: [121, 122]
                     }
 
     modes_2_out = {}
     cost_matrix = prune_refinement_levels(fname, ref_levels)
     out = {}
     N_in = 62874534
+    # M = 512
     for qid in join_queries.keys()[:1]:
         if True:
             out[qid] = {}
@@ -46,18 +49,18 @@ def single_query_analysis():
 
                     m, _, _ = solve_sonata_lp(join_queries[qid], query_2_tables, cost_matrix_tmp, qid_2__r,
                                            sigma_max, width_max, bits_max_stage, bits_max_register, mode,
-                                           join_queries)
+                                           join_queries, M)
                     modes_2_out[mode] = m
                     out[qid][mode].append(int(m.objVal))
                     out[qid][1].append(len(join_queries[qid]) * N_in)
                     break
 
-    # out_dir = "analysis/performance_eval/plot_results/plot_data/"
-    # out_fname = out_dir + "single_query_analysis.pickle"
-    #
-    # # with open(out_fname, 'w') as f:
-    # #     print "Dumping data to file", out_fname, " ... "
-    #     pickle.dump(cost_matrix, f)
+    out_dir = "analysis/performance_eval/plot_results/plot_data/"
+    out_fname = out_dir + "single_query_analysis.pickle"
+
+    with open(out_fname, 'w') as f:
+        print "Dumping data to file", out_fname, " ... "
+        pickle.dump(cost_matrix, f)
 
     print out
 
