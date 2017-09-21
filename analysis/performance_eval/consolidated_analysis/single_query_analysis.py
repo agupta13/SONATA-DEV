@@ -33,7 +33,7 @@ def single_query_analysis():
     out = {}
     N_in = 62874534
     # M = 512
-    for qid in join_queries.keys()[:1]:
+    for qid in join_queries.keys()[:]:
         if True:
             out[qid] = {}
             Q = [qid]
