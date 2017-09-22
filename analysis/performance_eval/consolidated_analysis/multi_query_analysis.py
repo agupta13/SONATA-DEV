@@ -60,6 +60,13 @@ def multi_query_analysis():
                     out[q_n][combo_id][1].append(sum([len(join_queries[qid]) for qid in all_queries[q_n][combo_id]]) * N_in)
                     break
 
+    out_dir = "analysis/performance_eval/plot_results/plot_data/"
+    out_fname = out_dir + "multi_query_analysis.pickle"
+
+    with open(out_fname, 'w') as f:
+        print "Dumping data to file", out_fname, " ... "
+        pickle.dump(cost_matrix, f)
+
     print out
 
 
