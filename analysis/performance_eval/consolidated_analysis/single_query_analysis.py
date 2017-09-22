@@ -39,7 +39,6 @@ def single_query_analysis():
             Q = [qid]
             print "*************"
             print "Query", qid
-            out[qid][1] = N_in * len(join_queries[qid])
             for mode in modes:
                 out[qid][mode] = []
                 out[qid][1] = []

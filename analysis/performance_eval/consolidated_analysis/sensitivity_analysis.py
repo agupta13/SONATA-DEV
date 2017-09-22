@@ -205,9 +205,9 @@ def vary_M():
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
 
     sigma_max = 12
-    width_max = 2
+    width_max = 4
     bits_max_stage = 8 * 1000000
-    bits_max_register = 4 * 1000000
+    bits_max_register = 0.5*bits_max_stage
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
 
     with open(fname, 'r') as f:
@@ -216,7 +216,7 @@ def vary_M():
         minutes.sort()
         print minutes
 
-    modes = [4, 6]
+    modes = [6]
 
     join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102], 11: [111, 112],
                     12: [121, 122]}
@@ -231,10 +231,9 @@ def vary_M():
     out = {}
     R = [0, 4, 8, 12, 16, 20, 24, 28, 32]
     Ms = [128, 256, 512, 1024, 2048, 4096]
-    Ms = [256]
+    # Ms = [256]
     for M in Ms:
         cost_matrix = prune_refinement_levels(fname, R)
-        rBits = len(R)-1
         out[M] = {}
         print "***************"
         print Q
@@ -254,8 +253,6 @@ def vary_M():
                 # break
 
     print out
-
-
 
 if __name__ == '__main__':
     # vary_D()
