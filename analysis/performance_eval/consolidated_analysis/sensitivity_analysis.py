@@ -6,6 +6,7 @@ from analysis.performance_eval.utils import *
 def vary_D():
     # fname = "data/aug_21_experiment_data_cost_matrix.pickle"
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
+
     Ds = [1, 2, 4, 8, 12, 16, 32]
     width_max = 4
     bits_max_stage = 8 * 1000000

@@ -8,10 +8,11 @@ def overhead_analysis():
     fname = "data/sept_5_experiment_data_cost_matrix.pickle"
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
 
-    sigma_max = 12
-    width_max = 2
+    sigma_max = 16
+    width_max = 4
     bits_max_stage = 8 * 1000000
-    bits_max_register = 4 * 1000000
+    bits_max_register = 0.5*bits_max_stage
+    M = 2048
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
 
     with open(fname, 'r') as f:
@@ -31,13 +32,13 @@ def overhead_analysis():
 
     # We need to fix queries 1, 4, & 11
     all_queries = {
-        1: [[5]],
-        2: [[5, 9]],
-        3: [[5, 9, 7]],
-        4: [[5, 9, 7, 12]],
-        5: [[5, 9, 7, 12, 6]],
-        6: [[5, 9, 7, 12, 6, 2]],
-        7: [[5, 9, 7, 12, 6, 2, 10]],
+        # 1: [[5]],
+        # 2: [[5, 9]],
+        # 3: [[5, 9, 7]],
+        # 4: [[5, 9, 7, 12]],
+        # 5: [[5, 9, 7, 12, 6]],
+        # 6: [[5, 9, 7, 12, 6, 2]],
+        # 7: [[5, 9, 7, 12, 6, 2, 10]],
         8: [[5, 9, 7, 12, 6, 2, 10, 3]]
     }
     out = {}
@@ -65,7 +66,7 @@ def overhead_analysis():
                     m, refinement_levels, Last = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
                                                            sigma_max, width_max, bits_max_stage, bits_max_register,
                                                            mode,
-                                                           join_queries)
+                                                           join_queries, M)
                     tmp = 0
                     reads = 0
                     for qid in Last:
@@ -94,7 +95,7 @@ def overhead_analysis():
                                 updates = cost_matrix_tmp[qid][transit][final_key][-1]
                             if 32 not in transit:
                                 tmp += updates
-                                # print qid, transit, final_key, updates
+                                print qid, transit, final_key, updates
                     print q_n, mode, minute, tmp
                     overhead[q_n][combo_id][mode].append(tmp)
                     register_updates[q_n][combo_id][mode].append(reads)

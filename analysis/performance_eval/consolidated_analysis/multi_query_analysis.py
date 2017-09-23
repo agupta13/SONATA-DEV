@@ -8,16 +8,17 @@ def multi_query_analysis():
     # fname = "data/sept_5_experiment_data_cost_matrix.pickle"
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
 
-    sigma_max = 12
-    width_max = 2
+    sigma_max = 16
+    width_max = 4
     bits_max_stage = 8 * 1000000
-    bits_max_register = 4 * 1000000
+    bits_max_register = 0.5 * bits_max_stage
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
     M = 2048
     modes = [2, 3, 4, 6]
     # modes = [6]
-    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102], 11: [111, 112],
+    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102],
                     12: [121, 122]}
+
     # We need to fix queries 1, 4, & 11
     all_queries = {
         1: [[5]],
@@ -29,6 +30,7 @@ def multi_query_analysis():
         7: [[5, 9, 7, 12, 6, 2, 10]],
         8: [[5, 9, 7, 12, 6, 2, 10, 3]]
     }
+
     out = {}
     N_in = 62874534
 
