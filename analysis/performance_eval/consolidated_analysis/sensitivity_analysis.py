@@ -4,28 +4,29 @@ from analysis.performance_eval.utils import *
 
 
 def vary_D():
-    fname = "data/aug_21_experiment_data_cost_matrix.pickle"
+    # fname = "data/aug_21_experiment_data_cost_matrix.pickle"
+    fname = "data/sept_16_experiment_data_cost_matrix.pickle"
     Ds = [1, 2, 4, 8, 12, 16, 32]
-    width_max = 2
+    width_max = 4
     bits_max_stage = 8 * 1000000
-    bits_max_register = 4 * 1000000
+    bits_max_register = 0.5 * bits_max_stage
+    M = 2048
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
 
     cost_matrix = prune_refinement_levels(fname, ref_levels)
-    Q, query_2_tables, qid_2__r = get_lp_input(cost_matrix, ref_levels)
 
-    modes = [2, 3, 4, 6]
-    origin_qids = [2, 5]
+    modes = [3, 4, 6]
+    # modes = [6]
 
-    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102], 11: [111, 112],
+    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102],
                     12: [121, 122]}
 
     out = {}
     out[1] = {}
-    N = 56695698
+    N = 62874534
 
     Q = []
-    for origin_qid in origin_qids:
+    for origin_qid in join_queries:
         Q += join_queries[origin_qid]
 
     print "*************"
@@ -33,45 +34,54 @@ def vary_D():
     for mode in modes:
         out[mode] = {}
         for D in Ds:
-            print "$$", "mode", mode, "sigma", D
-            m = solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2__r,
-                                D, width_max, bits_max_stage, bits_max_register, mode,
-                                join_queries)
-            out[mode][D] = m.objVal
-            # hardcode mode 1 values. I know this is inefficient, but it is correct.
-            out[1][D] = len(Q)*N
+            out[mode][D] = []
+            out[1][D] = []
+            for minute in cost_matrix:
+                cost_matrix_tmp = cost_matrix[minute]
+                _, query_2_tables, qid_2__r = get_lp_input(cost_matrix_tmp, ref_levels)
+                print "$$", "mode", mode, "sigma", D
+                m, _, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
+                                    D, width_max, bits_max_stage, bits_max_register, mode,
+                                    join_queries, M)
+                out[mode][D].append(m.objVal)
+                out[1][D].append(len(Q)*N)
+                break
+            # break
 
-    # out_fname = "analysis/data/"+"sensitivity_sigma"+".pickle"
-    #
-    # with open(out_fname, 'w') as f:
-    #     pickle.dump(out, f)
+    out_dir = "analysis/performance_eval/plot_results/plot_data/"
+    out_fname = out_dir + "sense_D_analysis.pickle"
+
+    with open(out_fname, 'w') as f:
+        print "Dumping data to file", out_fname, " ... "
+        pickle.dump(out, f)
 
     print out
 
 
 def vary_W():
-    fname = "data/aug_21_experiment_data_cost_matrix.pickle"
+    # fname = "data/aug_21_experiment_data_cost_matrix.pickle"
+    fname = "data/sept_16_experiment_data_cost_matrix.pickle"
+
     Ws = [1, 2, 4, 8, 12, 16, 32]
-    sigma_max = 12
+    sigma_max = 16
     bits_max_stage = 8 * 1000000
-    bits_max_register = 4 * 1000000
+    bits_max_register = 0.5 * bits_max_stage
+    M = 2048
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
 
     cost_matrix = prune_refinement_levels(fname, ref_levels)
-    Q, query_2_tables, qid_2__r = get_lp_input(cost_matrix, ref_levels)
 
     modes = [2, 3, 4, 6]
-    origin_qids = [2, 5]
 
-    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102], 11: [111, 112],
+    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102],
                     12: [121, 122]}
 
     out = {}
     out[1] = {}
-    N = 56695698
+    N = 62874534
 
     Q = []
-    for origin_qid in origin_qids:
+    for origin_qid in join_queries:
         Q += join_queries[origin_qid]
 
     print "*************"
@@ -79,46 +89,53 @@ def vary_W():
     for mode in modes:
         out[mode] = {}
         for W in Ws:
-            print "$$", "mode", mode, "Width", W
-            m = solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2__r,
-                                sigma_max, W, bits_max_stage, bits_max_register, mode,
-                                join_queries)
-            out[mode][W] = m.objVal
-            # hardcode mode 1 values. I know this is inefficient, but it is correct.
-            out[1][W] = len(Q)*N
+            out[mode][W] = []
+            out[1][W] = []
+            for minute in cost_matrix:
+                cost_matrix_tmp = cost_matrix[minute]
+                _, query_2_tables, qid_2__r = get_lp_input(cost_matrix_tmp, ref_levels)
+                print "$$", "mode", mode, "W", W
+                m, _, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
+                                          sigma_max, W, bits_max_stage, bits_max_register, mode,
+                                          join_queries, M)
+                out[mode][W].append(m.objVal)
+                out[1][W].append(len(Q)*N)
+                break
+                # break
 
-    # out_fname = "analysis/data/"+"sensitivity_sigma"+".pickle"
-    #
-    # with open(out_fname, 'w') as f:
-    #     pickle.dump(out, f)
+    out_dir = "analysis/performance_eval/plot_results/plot_data/"
+    out_fname = out_dir + "sense_W_analysis.pickle"
+
+    with open(out_fname, 'w') as f:
+        print "Dumping data to file", out_fname, " ... "
+        pickle.dump(out, f)
 
     print out
 
 
 def vary_B():
     fname = "data/aug_21_experiment_data_cost_matrix.pickle"
+    fname = "data/sept_16_experiment_data_cost_matrix.pickle"
+
     Bs = [0.5, 1, 2, 4, 8, 12, 16, 32]
-    sigma_max = 12
-    width_max = 2
-    bits_max_stage = 8 * 1000000
-    bits_max_register = 4 * 1000000
+    sigma_max = 16
+    width_max = 4
+    M = 2048
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
 
     cost_matrix = prune_refinement_levels(fname, ref_levels)
-    Q, query_2_tables, qid_2__r = get_lp_input(cost_matrix, ref_levels)
 
     modes = [2, 3, 4, 6]
-    origin_qids = [2, 5]
 
-    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102], 11: [111, 112],
+    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102],
                     12: [121, 122]}
 
     out = {}
     out[1] = {}
-    N = 56695698
+    N = 62874534
 
     Q = []
-    for origin_qid in origin_qids:
+    for origin_qid in join_queries:
         Q += join_queries[origin_qid]
 
     print "*************"
@@ -126,21 +143,28 @@ def vary_B():
     for mode in modes:
         out[mode] = {}
         for B in Bs:
+            out[mode][B] = []
+            out[1][B] = []
             bits_max_stage = B*1000000
             bits_max_register = bits_max_stage/2
 
-            print "$$", "mode", mode, "bits stage", bits_max_stage, "bits register", bits_max_register
-            m = solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2__r,
-                                sigma_max, width_max, bits_max_stage, bits_max_register, mode,
-                                join_queries)
-            out[mode][B] = m.objVal
-            # hardcode mode 1 values. I know this is inefficient, but it is correct.
-            out[1][B] = len(Q)*N
+            for minute in cost_matrix:
+                cost_matrix_tmp = cost_matrix[minute]
+                _, query_2_tables, qid_2__r = get_lp_input(cost_matrix_tmp, ref_levels)
+                print "$$", "mode", mode, "B", B
+                m, _, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
+                                          sigma_max, width_max, bits_max_stage, bits_max_register, mode,
+                                          join_queries, M)
+                out[mode][B].append(m.objVal)
+                out[1][B].append(len(Q)*N)
+                break
 
-    # out_fname = "analysis/data/"+"sensitivity_sigma"+".pickle"
-    #
-    # with open(out_fname, 'w') as f:
-    #     pickle.dump(out, f)
+    out_dir = "analysis/performance_eval/plot_results/plot_data/"
+    out_fname = out_dir + "sense_B_analysis.pickle"
+
+    with open(out_fname, 'w') as f:
+        print "Dumping data to file", out_fname, " ... "
+        pickle.dump(out, f)
 
     print out
 
@@ -149,31 +173,24 @@ def vary_R():
     fname = "data/sept_5_experiment_data_cost_matrix.pickle"
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
 
-    sigma_max = 12
-    width_max = 2
+    sigma_max = 16
+    width_max = 4
     bits_max_stage = 8 * 1000000
-    bits_max_register = 4 * 1000000
-    ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
+    bits_max_register = 0.5 * bits_max_stage
+    M = 2048
 
-    with open(fname, 'r') as f:
-        counts = pickle.load(f)
-        minutes = counts.keys()
-        minutes.sort()
-        print minutes
+    modes = [4, 6]
 
-
-
-    modes = [6]
-
-    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102], 11: [111, 112],
+    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102],
                     12: [121, 122]}
 
     # We need to fix queries 1, 4, & 11
-    Q = []
-    origin_qids = [5, 9, 7, 12, 6, 2, 10, 3]
-    for origin_qid in origin_qids:
-        Q += join_queries[origin_qid]
     out = {}
+
+    Q = []
+    for origin_qid in join_queries:
+        Q += join_queries[origin_qid]
+
     Rs = [[0, 4, 8, 12, 16, 20, 24, 28, 32], [0, 8, 16, 24, 32], [0, 16, 32], [0, 32]]
 
     for R in Rs:
@@ -181,22 +198,25 @@ def vary_R():
         rBits = len(R)-1
         out[rBits] = {}
         print "***************"
-        print Q
+        print Q, R
         for mode in modes:
             out[rBits][mode] = []
-            for minute in minutes:
+            for minute in cost_matrix:
                 cost_matrix_tmp = cost_matrix[minute]
                 _, query_2_tables, qid_2__r = get_lp_input(cost_matrix_tmp, R)
-                m, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
+                m, _, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
                                        sigma_max, width_max, bits_max_stage, bits_max_register,
-                                       mode, join_queries)
-                tmp = m.objVal
+                                       mode, join_queries, M)
 
-                out[rBits][mode].append(tmp)
+                out[rBits][mode].append(m.objVal)
                 break
-                # break
-                # break
 
+    out_dir = "analysis/performance_eval/plot_results/plot_data/"
+    out_fname = out_dir + "sense_R_analysis.pickle"
+
+    with open(out_fname, 'w') as f:
+        print "Dumping data to file", out_fname, " ... "
+        pickle.dump(out, f)
     print out
 
 
@@ -204,59 +224,64 @@ def vary_M():
     fname = "data/sept_5_experiment_data_cost_matrix.pickle"
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
 
-    sigma_max = 12
+    sigma_max = 16
     width_max = 4
     bits_max_stage = 8 * 1000000
     bits_max_register = 0.5*bits_max_stage
+    Ms = [128, 256, 512, 1024, 2048, 4096, 8192]
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
 
-    with open(fname, 'r') as f:
-        counts = pickle.load(f)
-        minutes = counts.keys()
-        minutes.sort()
-        print minutes
+    cost_matrix = prune_refinement_levels(fname, ref_levels)
 
-    modes = [6]
+    modes = [3, 4, 6]
 
-    join_queries = {2: [2], 3: [3], 5: [5], 6: [6], 7: [7], 9: [91, 92, 93], 10: [101, 102], 11: [111, 112],
-                    12: [121, 122]}
+    join_queries = {
+        2: [2],
+        3: [3],
+        5: [5],
+        6: [6],
+        7: [7],
+        9: [91, 92, 93],
+        10: [101, 102],
+        12: [121, 122]
+    }
 
-    # We need to fix queries 1, 4, & 11
+    out = {}
+    N = 62874534
     Q = []
-    origin_qids = [5, 9, 7, 12, 6, 2, 10, 3]
-    for origin_qid in origin_qids:
+    for origin_qid in join_queries:
         Q += join_queries[origin_qid]
 
-    Q = [5]
-    out = {}
-    R = [0, 4, 8, 12, 16, 20, 24, 28, 32]
-    Ms = [128, 256, 512, 1024, 2048, 4096]
-    # Ms = [256]
     for M in Ms:
-        cost_matrix = prune_refinement_levels(fname, R)
         out[M] = {}
         print "***************"
         print Q
         for mode in modes:
             out[M][mode] = []
-            for minute in minutes:
+            for minute in cost_matrix:
                 cost_matrix_tmp = cost_matrix[minute]
-                _, query_2_tables, qid_2__r = get_lp_input(cost_matrix_tmp, R)
+                _, query_2_tables, qid_2__r = get_lp_input(cost_matrix_tmp, ref_levels)
                 m, _, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
                                        sigma_max, width_max, bits_max_stage, bits_max_register,
                                        mode, join_queries, M)
-                tmp = m.objVal
+                if m.status != 3:
+                    out[M][mode].append(m.objVal)
+                else:
+                    out[M][mode].append(len(Q)*N)
 
-                out[M][mode].append(tmp)
                 break
-                # break
-                # break
 
     print out
+    out_dir = "analysis/performance_eval/plot_results/plot_data/"
+    out_fname = out_dir + "sense_M_analysis.pickle"
+
+    with open(out_fname, 'w') as f:
+        print "Dumping data to file", out_fname, " ... "
+        pickle.dump(out, f)
 
 if __name__ == '__main__':
-    # vary_D()
-    # vary_W()
-    # vary_B()
-    # vary_R()
+    vary_D()
+    vary_W()
+    vary_B()
+    vary_R()
     vary_M()

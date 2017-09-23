@@ -248,10 +248,6 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
                     else:
                         print("This should not happen")
 
-    # if mode == 6:
-    #     for qid in Q:
-    #         tmp = [I[qid][rid] for rid in qid_2_R[qid][1:]]
-    #         m.addConstr(sum(tmp) <= 4)
 
     # Apply mode-specific changes
     if mode in [1, 2]:
@@ -283,60 +279,64 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
     m.setParam(GRB.Param.TimeLimit, 600)
 
     m.optimize()
+    print("Status code", m.status)
 
-    # for v in m.getVars():
-    #     print(v.varName, v.x)
+    if m.status != 3:
+        # for v in m.getVars():
+        #     print(v.varName, v.x)
 
-    # Print the Output
-    out_table = []
-    refinement_levels = {}
-    table_headers = ["Queries"]
-    for sid in range(1, sigma_max + 1):
-        table_headers.append(str(sid))
+        # Print the Output
+        out_table = []
+        refinement_levels = {}
+        table_headers = ["Queries"]
+        for sid in range(1, sigma_max + 1):
+            table_headers.append(str(sid))
 
-    row_id = 0
-    for qid in Q:
-        refinement_levels[qid] = "0"
-        for rid in qid_2_R[qid][1:]:
-            if float(I[qid][rid].x) > 0.5:
-                refinement_levels[qid] += "-->" + str(rid)
-            out_table.append([])
-            out_table[row_id].append("Q" + str(qid) + "/" + str(rid))
-            for sid in range(1, sigma_max + 1):
-                flag = 0
-                for tid in query_2_tables[qid]:
-                    # print(qid, rid, sid, tid, S[qid][rid][tid][sid].x, math.ceil(float(S[qid][rid][tid][sid].x)),
-                    #       math.ceil(float(S[qid][rid][tid][sid].x)) == 1)
-                    if float(S[qid][rid][tid][sid].x) > 0.5 and float(I[qid][rid].x) > 0.5:
-                        for rid_prev in F[qid][rid].keys():
-                            if float(F[qid][rid][rid_prev].x) > 0.5:
-                                out_table[row_id].append(cost_matrix[qid][(rid_prev, rid)][tid][1])
-                                flag = 1
-                if flag == 0:
-                    out_table[row_id].append(0)
-            row_id += 1
+        row_id = 0
+        for qid in Q:
+            refinement_levels[qid] = "0"
+            for rid in qid_2_R[qid][1:]:
+                if float(I[qid][rid].x) > 0.5:
+                    refinement_levels[qid] += "-->" + str(rid)
+                out_table.append([])
+                out_table[row_id].append("Q" + str(qid) + "/" + str(rid))
+                for sid in range(1, sigma_max + 1):
+                    flag = 0
+                    for tid in query_2_tables[qid]:
+                        # print(qid, rid, sid, tid, S[qid][rid][tid][sid].x, math.ceil(float(S[qid][rid][tid][sid].x)),
+                        #       math.ceil(float(S[qid][rid][tid][sid].x)) == 1)
+                        if float(S[qid][rid][tid][sid].x) > 0.5 and float(I[qid][rid].x) > 0.5:
+                            for rid_prev in F[qid][rid].keys():
+                                if float(F[qid][rid][rid_prev].x) > 0.5:
+                                    out_table[row_id].append(cost_matrix[qid][(rid_prev, rid)][tid][1])
+                                    flag = 1
+                    if flag == 0:
+                        out_table[row_id].append(0)
+                row_id += 1
 
-    meta_size = 0
-    for qid in M:
-        for rid in M[qid]:
-            # print(qid, rid, M[qid][rid].x, ML[qid][rid].x, [Last[qid][rid][tid].x for tid in query_2_tables[qid]])
-            if M[qid][rid].x > 0.5:
-                meta_size += 16
-            if ML[qid][rid].x > 0.5:
-                meta_size += 48
-
-
-    print("Metadata Size:", meta_size)
-
+        meta_size = 0
+        for qid in M:
+            for rid in M[qid]:
+                # print(qid, rid, M[qid][rid].x, ML[qid][rid].x, [Last[qid][rid][tid].x for tid in query_2_tables[qid]])
+                if M[qid][rid].x > 0.5:
+                    meta_size += 16
+                if ML[qid][rid].x > 0.5:
+                    meta_size += 48
 
 
-    print("## Mode", mode)
-    print("N(Tuples)", m.objVal)
-    print(tabulate(out_table, headers=table_headers))
-    print(refinement_levels)
-    print("==========================")
+        print("Metadata Size:", meta_size)
 
-    return m, refinement_levels, Last
+
+
+        print("## Mode", mode)
+        print("N(Tuples)", m.objVal)
+        print(tabulate(out_table, headers=table_headers))
+        print(refinement_levels)
+        print("==========================")
+
+        return m, refinement_levels, Last
+    else:
+        return m, None, None
 
 
 def test_lp(test_id=1):
