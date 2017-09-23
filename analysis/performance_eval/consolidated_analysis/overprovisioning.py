@@ -67,13 +67,13 @@ def vary_DeltaB():
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
     sigma_max = 12
     width_max = 4
+    sigma_max = 12
+    width_max = 4
     bits_max_stage = 8 * 1000000
-    bits_max_register = 2 * 1000000
+    bits_max_register = 0.5 * bits_max_stage
+    M = 2048
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
-
     cost_matrix = prune_refinement_levels(fname, ref_levels)
-
-
     modes = [6]
 
     join_queries = {
@@ -91,7 +91,6 @@ def vary_DeltaB():
     out = {}
 
     deltaXs = [0, 20, 40, 60, 80, 100]
-    # deltaXs = [40]
 
     print "*************"
     for minute in cost_matrix:
@@ -102,9 +101,7 @@ def vary_DeltaB():
             for deltaX in deltaXs:
                 print "$$", "mode", mode, "deltaX", deltaX
                 cost_matrix_tmp = inflate_cost_matrix(cost_matrix[minute], deltaX)
-                # cost_matrix_tmp = cost_matrix[minute]
                 Q, query_2_tables, qid_2__r = get_lp_input(cost_matrix_tmp, ref_levels)
-                # origin_qids = [2, 3, 5, 6, 7]
                 Q = []
                 for origin_qid in join_queries.keys():
                     Q += join_queries[origin_qid]
@@ -113,7 +110,7 @@ def vary_DeltaB():
 
                 m, _, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
                                     sigma_max, width_max, bits_max_stage, bits_max_register, mode,
-                                    join_queries)
+                                    join_queries, M)
                 out[minute][mode][deltaX] = m.objVal
         break
 

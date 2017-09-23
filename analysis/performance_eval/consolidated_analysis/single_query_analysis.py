@@ -11,7 +11,7 @@ def single_query_analysis():
     sigma_max = 12
     width_max = 4
     bits_max_stage = 8 * 1000000
-    bits_max_register = 0.75 * bits_max_stage
+    bits_max_register = 0.5 * bits_max_stage
     M = 2048
     ref_levels = [0, 4, 8, 12, 16, 20, 24, 28, 32]
     modes = [2, 3, 4, 6]
@@ -24,7 +24,6 @@ def single_query_analysis():
                     7: [7],
                     9: [91, 92, 93],
                     10: [101, 102],
-                    11: [111, 112],
                     12: [121, 122]
                     }
 
