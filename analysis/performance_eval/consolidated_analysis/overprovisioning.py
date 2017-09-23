@@ -75,21 +75,25 @@ def vary_DeltaB():
 
 
     modes = [6]
-    origin_qids = [2, 5]
 
-    join_queries = {1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [6], 7: [7]}
+    join_queries = {
+            2: [2],
+            3: [3],
+            5: [5],
+            6: [6],
+            7: [7],
+            9: [91, 92, 93],
+            10: [101, 102],
+            11: [111, 112],
+            12: [121, 122]
+    }
 
     out = {}
-    N = 56695698
-
-    Q = []
-    for origin_qid in origin_qids:
-        Q += join_queries[origin_qid]
 
     deltaXs = [0, 20, 40, 60, 80, 100]
+    # deltaXs = [40]
 
     print "*************"
-    print "Query", Q
     for minute in cost_matrix:
         out[minute] = {}
         # out[minute][1] = {}
@@ -100,26 +104,28 @@ def vary_DeltaB():
                 cost_matrix_tmp = inflate_cost_matrix(cost_matrix[minute], deltaX)
                 # cost_matrix_tmp = cost_matrix[minute]
                 Q, query_2_tables, qid_2__r = get_lp_input(cost_matrix_tmp, ref_levels)
-                origin_qids = [2, 3, 5, 6, 7]
+                # origin_qids = [2, 3, 5, 6, 7]
                 Q = []
-                for origin_qid in origin_qids:
+                for origin_qid in join_queries.keys():
                     Q += join_queries[origin_qid]
 
-                m, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
+                print Q
+
+                m, _, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
                                     sigma_max, width_max, bits_max_stage, bits_max_register, mode,
                                     join_queries)
                 out[minute][mode][deltaX] = m.objVal
-                # hardcode mode 1 values. I know this is inefficient, but it is correct.
-                # out[minute][1][deltaX] = len(Q) * N
         break
 
-    # out_fname = "analysis/data/"+"sensitivity_sigma"+".pickle"
-    #
-    # with open(out_fname, 'w') as f:
-    #     pickle.dump(out, f)
+    out_dir = "analysis/performance_eval/plot_results/plot_data/"
+    out_fname = out_dir + "over_provisioning_analysis.pickle"
+
+    with open(out_fname, 'w') as f:
+        print "Dumping data to file", out_fname, " ... "
+        pickle.dump(out, f)
 
     print out
 
 
-get_delta_distribution()
-# vary_DeltaB()
+# get_delta_distribution()
+vary_DeltaB()
