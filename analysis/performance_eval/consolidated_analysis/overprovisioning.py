@@ -54,9 +54,11 @@ def inflate_cost_matrix(in_cost_matrix, deltaX):
             out_cost_matrix[qid][transit] = {}
             for tid in in_cost_matrix[qid][transit]:
                 n1, b, n2 = in_cost_matrix[qid][transit][tid]
-                b_new = int(b * (1 + float(deltaX) / 100))
+                b_new = int(b * (1 + (float(deltaX) / 100)))
                 # inflate the number of bits required
                 out_cost_matrix[qid][transit][tid] = (n1, b_new, n2)
+                # if b > 0:
+                #     print b, b_new, float(b_new-b)/b
                 # if b > 0:
                 #     print b, b_new, float(b_new-b)/b
 
@@ -65,8 +67,6 @@ def inflate_cost_matrix(in_cost_matrix, deltaX):
 
 def vary_DeltaB():
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
-    sigma_max = 12
-    width_max = 4
     sigma_max = 12
     width_max = 4
     bits_max_stage = 8 * 1000000
@@ -89,7 +89,8 @@ def vary_DeltaB():
 
     out = {}
 
-    deltaXs = [0, 20, 40, 60, 80, 100]
+    deltaXs = [0, 50, 100, 200, 400, 800, 1000]
+    # deltaXs = [600]
 
     print "*************"
     for minute in cost_matrix:
