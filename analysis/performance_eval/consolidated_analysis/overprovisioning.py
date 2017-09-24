@@ -67,7 +67,7 @@ def inflate_cost_matrix(in_cost_matrix, deltaX):
 
 def vary_DeltaB():
     fname = "data/sept_16_experiment_data_cost_matrix.pickle"
-    sigma_max = 12
+    sigma_max = 16
     width_max = 4
     bits_max_stage = 8 * 1000000
     bits_max_register = 0.5 * bits_max_stage
@@ -89,13 +89,12 @@ def vary_DeltaB():
 
     out = {}
 
-    deltaXs = [0, 50, 100, 200, 400, 800, 1000]
+    deltaXs = [0, 50, 100, 200, 250, 300, 350, 400, 500]
     # deltaXs = [600]
 
     print "*************"
     for minute in cost_matrix:
         out[minute] = {}
-        # out[minute][1] = {}
         for mode in modes:
             out[minute][mode] = {}
             for deltaX in deltaXs:
@@ -110,7 +109,7 @@ def vary_DeltaB():
 
                 m, _, _ = solve_sonata_lp(Q, query_2_tables, cost_matrix_tmp, qid_2__r,
                                     sigma_max, width_max, bits_max_stage, bits_max_register, mode,
-                                    join_queries, M)
+                                    join_queries, M, 1200)
                 out[minute][mode][deltaX] = m.objVal
         break
 

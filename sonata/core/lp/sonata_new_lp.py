@@ -7,7 +7,7 @@ import itertools
 
 
 def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_max, bits_max_stage,
-                    bits_max_register, mode=6, join_queries={}, M_max = 4096):
+                    bits_max_register, mode=6, join_queries={}, M_max = 4096, timeout=300):
     """
     :param Q:
     :param query_2_tables:
@@ -276,7 +276,7 @@ def solve_sonata_lp(Q, query_2_tables, cost_matrix, qid_2_R, sigma_max, width_ma
     m.write(name + ".lp")
     # m.setParam(GRB.Param.OutputFlag, 0)
     # m.setParam(GRB.Param.LogToConsole, 0)
-    m.setParam(GRB.Param.TimeLimit, 1200)
+    m.setParam(GRB.Param.TimeLimit, timeout)
 
     m.optimize()
     print("Status code", m.status)
