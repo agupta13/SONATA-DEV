@@ -46,7 +46,7 @@ def generate_cost_matrix_from_counts():
                 counts = pickle.load(f)
                 qids = origin_qid_2_qids[qid_origin]
                 for qid in qids:
-                    print qid
+                    # print qid
                     if qid not in cost_matrix[minute]:
                         cost_matrix[minute][qid] = {}
                     for transit in counts[qid]:
@@ -92,7 +92,11 @@ def generate_cost_matrix_from_counts():
                                         cost_matrix[minute][qid][transit][tid2 % 1000] = (
                                         n_packets_in, n_bits, n_packets_out)
 
-    print cost_matrix[1301][1][(20, 28)], cost_matrix[1302][1][(20, 28)], cost_matrix[1303][1][(20, 28)]
+
+    print (cost_matrix[1301][2][(0,32)])
+    print (cost_matrix[1301][2][(0, 8)], cost_matrix[1301][2][(8,16)],cost_matrix[1301][2][(8,32)])
+    print (cost_matrix[1301][2][(0,8)], cost_matrix[1301][2][(8,32)])
+
     out_fname = "data/sept_16_experiment_data_cost_matrix.pickle"
     with open(out_fname, 'w') as f:
         print "Dumping data to file", out_fname, " ... "

@@ -36,7 +36,7 @@ def get_delta_distribution():
                         else:
                             rescaling = [0 for x in tmp]
                         tmp_delta = np.std(tmp)
-                        # tmp_delta = np.std(rescaling)
+                        tmp_delta = np.std(rescaling)
                         print qid, transit, tid, tmp, tmp_delta
                         delta[qid][transit][tid] = tmp_delta
                         rprev_2_delta[r_prev].append(tmp_delta)
@@ -123,5 +123,5 @@ def vary_DeltaB():
     print out
 
 
-# get_delta_distribution()
-vary_DeltaB()
+get_delta_distribution()
+# vary_DeltaB()
